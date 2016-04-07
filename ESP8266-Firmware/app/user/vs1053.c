@@ -119,7 +119,8 @@ ICACHE_FLASH_ATTR void VS1053_SineTest(){
 
 ICACHE_FLASH_ATTR void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyte, uint8_t lowbyte)
 {
-	spi_take_semaphore();
+    while(!spi_take_semaphore());
+//	spi_take_semaphore();
 	VS1053_SPI_SpeedDown();
 	SDI_ChipSelect(RESET);
 	while(VS1053_checkDREQ() == 0);
@@ -135,7 +136,8 @@ ICACHE_FLASH_ATTR void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyt
 }
 
 ICACHE_FLASH_ATTR uint16_t VS1053_ReadRegister(uint8_t addressbyte){
-	spi_take_semaphore();
+    while(!spi_take_semaphore());
+//	spi_take_semaphore();
 	VS1053_SPI_SpeedDown();
 	uint16_t result;
 	SDI_ChipSelect(RESET);

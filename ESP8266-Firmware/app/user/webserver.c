@@ -152,6 +152,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			char* url = getParameterFromResponse("url=", data, data_size);
 			char* path = getParameterFromResponse("path=", data, data_size);
 			char* port = getParameterFromResponse("port=", data, data_size);
+			int i;
 			if(url != NULL && path != NULL && port != NULL) {
 				clientDisconnect();
 				while(clientIsConnected()) vTaskDelay(5);
@@ -159,7 +160,12 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 				clientSetPath(path);
 				clientSetPort(atoi(port));
 				clientConnect();
-				while(!clientIsConnected()) vTaskDelay(5);
+				for (i = 0;i<200;i++)
+				{
+					if (clientIsConnected()) break;
+					vTaskDelay(5);
+				}
+//				while(!clientIsConnected()) vTaskDelay(5);
 			}
 			if(url) free(url);
 			if(path) free(path);
@@ -231,6 +237,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 	} else if(strcmp(name, "/play") == 0) {
 		if(data_size > 0) {
 			char* id = getParameterFromResponse("id=", data, data_size);
+			int i;
 			if(id != NULL) {
 				struct shoutcast_info* si;
 				si = getStation(atoi(id));
@@ -241,7 +248,12 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 					clientSetPath(si->file);
 					clientSetPort(si->port);
 					clientConnect();
-					while(!clientIsConnected()) vTaskDelay(5);
+					for (i = 0;i<200;i++)
+					{
+					  if (clientIsConnected()) break;
+					  vTaskDelay(5);
+					}
+//					while(!clientIsConnected()) vTaskDelay(5);
 				}
 				free(si);
 			}

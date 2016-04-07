@@ -114,20 +114,27 @@ ICACHE_FLASH_ATTR void clientParsePlaylist(char* s)
   char* str = strstr(s,"http://");
   char path[100];
   char url[100]; 
+  char port[16] = "80";
   int i = 0; int j = 0;
 
   if (str != NULL)
   {
   str +=7; //skip http
-  while (str[i] != '/') {url[j] = str[i]; i++ ;j++;}
+  while ((str[i] != '/')&&(str[i] != ':')) {url[j] = str[i]; i++ ;j++;}
   url[j] = 0;
   j = 0;
-  while ((str[i] != '\n')&&(str[i] != 0)) {path[j] = str[i]; i++; j++;}
+  if (str[i] == ':')
+  {
+    i++;
+    while (str[i] != '/') {port[j] = str[i]; i++ ;j++;}
+  }
+  j = 0;
+  while ((str[i] != 0x0d)&&(str[i] != 0)&&(str[i] != '"')) {path[j] = str[i]; i++; j++;}
   path[j] = 0;
-  printf("url: %s, path: %s",url,path);
+  printf("url: %s, path: %s, port: %s\n",url,path,port);
   clientSetURL(url);
   clientSetPath(path);
-  clientSetPort(80);
+  clientSetPort(atoi(port));
   }
 
 }
@@ -279,6 +286,7 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 	*/
 	static int metad = -1;
 	uint16_t l ;
+	char *t1;
 
 	switch (cstatus)
 	{
@@ -290,14 +298,22 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
     break;
 	case C_HEADER:
 	    printf("Byte_read = %s\n",pdata);
-		clientParseHeader(pdata);
-		if(header.members.single.metaint > 0) metad = header.members.single.metaint;
-		char *t1 = strstr(pdata, "\r\n\r\n"); // END OF HEADER
-		if(t1 != NULL) {
+		t1 = strstr(pdata, "302 Found"); 
+		if (t1 != NULL) { // moved
+		  clientDisconnect();
+		  clientParsePlaylist(pdata);
+		  cstatus = C_PLAYLIST;
+		}
+		else {
+		  clientParseHeader(pdata);
+		  if(header.members.single.metaint > 0) metad = header.members.single.metaint;
+		  t1 = strstr(pdata, "\r\n\r\n"); // END OF HEADER
+		  if(t1 != NULL) {
 			//processed = t1-pdata + 4;
 			cstatus = C_DATA;
 			int newlen = len - (t1-pdata) - 4;
 			if(newlen > 0) clientReceiveCallback(NULL, t1+4, newlen);
+		  }
 		}
 	break;
 	default:
@@ -355,17 +371,26 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 			dest.sin_addr.s_addr = inet_addr(inet_ntoa(*(struct in_addr*)(server -> h_addr_list[0])));
 
 			/*---Connect to server---*/
-			if(connect(sockfd, (struct sockaddr*)&dest, sizeof(dest)) >= 0) {
+			if(connect(sockfd, (struct sockaddr*)&dest, sizeof(dest)) >= 0) 
+			{
 				printf("Socket connected\n");
 				bzero(buffer, sizeof(buffer));
 				
-				char *t0 = strstr(clientPath, "m3u");
+				char *t0 = strstr(clientPath, ".m3u");
 				if (t0 != NULL)  // a playlist asked
 				{
 				  cstatus = C_PLAYLIST;
 				  sprintf(buffer, "GET %s HTTP/1.1\r\nHOST: %s\r\n\r\n", clientPath,clientURL); //ask the playlist
+			    } else 
+				{
+				  t0 = strstr(clientPath, ".pls");
+				  if (t0 != NULL)  // a playlist asked
+				  {
+					cstatus = C_PLAYLIST;
+					sprintf(buffer, "GET %s HTTP/1.1\r\nHOST: %s\r\n\r\n", clientPath,clientURL); //ask the playlist
+				  }
+				  else sprintf(buffer, "GET %s HTTP/1.1\r\nHOST: %s\r\nicy-metadata:0\r\n\r\n", clientPath,clientURL); //jpc HTTP 1.1
 				}
-				else sprintf(buffer, "GET %s HTTP/1.1\r\nHOST: %s\r\nicy-metadata:0\r\n\r\n", clientPath,clientURL); //jpc HTTP 1.1
 				printf(buffer);
 				send(sockfd, buffer, strlen(buffer), 0);
 
@@ -382,7 +407,7 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 					vTaskDelay(1);
 				}
 				while ( bytes_read > 0 );
-			}
+			} else printf("Socket fails to connect\n");
 			/*---Clean up---*/
 			if (bytes_read == 0 ) clientDisconnect(); //jpc
 			playing = 0;
