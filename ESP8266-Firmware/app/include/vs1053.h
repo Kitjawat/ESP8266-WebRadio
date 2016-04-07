@@ -60,6 +60,7 @@
 #define SM_SDINEW       	0x800
 #define SM_ADPCM        	0x1000
 #define SM_ADPCM_HP     	0x2000
+#define SM_LINE1            0x4000
 
 //public functions
 void 	VS1053_HW_init();

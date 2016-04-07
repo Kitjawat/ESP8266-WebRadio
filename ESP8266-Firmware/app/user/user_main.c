@@ -89,17 +89,16 @@ void user_init(void)
     Delay(500);
 	UART_SetBaudrate(0,115200);
 	wifi_set_opmode(STATION_MODE);
-    Delay(500);
+    Delay(900);
 	clientInit();
-	VS1053_HW_init();
-	Delay(100);
+/*	VS1053_HW_init();
+	Delay(300);
 	VS1053_Start();
-	VS1053_SetVolume(70);
-
+	VS1053_SetVolume(40);
+	Delay(100);
 	VS1053_SPI_SpeedUp();
-
-	xTaskCreate(testtask, "t0", 256, NULL, 1, NULL); // DEBUG/TEST
-
+*/
+	xTaskCreate(testtask, "t0", 256, NULL, 0, NULL); // DEBUG/TEST
 	xTaskCreate(uartInterfaceTask, "t1", 256, NULL, 1, NULL);
 	xTaskCreate(serverTask, "t2", 256, NULL, 1, NULL);
 	xTaskCreate(clientTask, "t3", 512, NULL, 2, NULL);

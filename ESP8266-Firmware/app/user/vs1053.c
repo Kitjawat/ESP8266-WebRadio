@@ -156,7 +156,7 @@ ICACHE_FLASH_ATTR uint16_t VS1053_ReadRegister(uint8_t addressbyte){
 
 ICACHE_FLASH_ATTR void VS1053_ResetChip(){
 	ControlReset(SET);
-	Delay(1000);
+	Delay(500);
 	SPIPutChar(0xff);
 	SCI_ChipSelect(RESET);
 	SDI_ChipSelect(RESET);
@@ -197,14 +197,16 @@ void VS1053_PluginLoad()
 */
 ICACHE_FLASH_ATTR void VS1053_Start(){
 	VS1053_ResetChip();
+	Delay(100);
 // these 4 lines makes board to run on mp3 mode, no soldering required anymore
-VS1053_WriteRegister(SPI_WRAMADDR, 0xc0,0x17); //address of GPIO_DDR is 0xC017
-VS1053_WriteRegister(SPI_WRAM, 0x00,0x03); //GPIO_DDR=3
-VS1053_WriteRegister(SPI_WRAMADDR, 0xc0,0x19); //address of GPIO_ODATA is 0xC019
-VS1053_WriteRegister(SPI_WRAM, 0x00,0x00); //GPIO_ODATA=0
-
+	VS1053_WriteRegister(SPI_WRAMADDR, 0xc0,0x17); //address of GPIO_DDR is 0xC017
+	VS1053_WriteRegister(SPI_WRAM, 0x00,0x03); //GPIO_DDR=3
+	VS1053_WriteRegister(SPI_WRAMADDR, 0xc0,0x19); //address of GPIO_ODATA is 0xC019
+	VS1053_WriteRegister(SPI_WRAM, 0x00,0x00); //GPIO_ODATA=0
+	Delay(100);
 	while(VS1053_checkDREQ() == 0);
 	VS1053_WriteRegister(SPI_CLOCKF,0x60,0x00);
+	VS1053_WriteRegister(SPI_MODE, (SM_LINE1 | SM_SDINEW)>>8 , SM_RESET); // soft reset
 	VS1053_WriteRegister(0x00, 0x08, 0x02); //0x0842 -> STREAM MODE ON
 	while(VS1053_checkDREQ() == 0);
 	VS1053_regtest();

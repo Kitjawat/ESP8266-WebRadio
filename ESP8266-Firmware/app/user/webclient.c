@@ -19,6 +19,7 @@ uint16_t clientPort = 80;
 struct hostent *server;
 
 static const char* icyHeaders[] = { "icy-name:", "icy-notice1:", "icy-notice2:",  "icy-url:", "icy-genre:", "icy-br:", "icy-metaint:" };
+static const char* iceHeaders[] =  { "ice-audio-info:"};
 
 static enum clientStatus cstatus;
 static uint32_t metacount = 0;
@@ -330,8 +331,9 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 			else l = bufferWrite(buf, len);
 		} while(l < len);
 
-		if(!playing && getBufferFree() < BUFFER_SIZE/2) {
+		if(!playing && (getBufferFree() < BUFFER_SIZE/2)) {
 			playing=1;
+			printf("Playing\n");
 		}
 	break;	
     }
@@ -340,6 +342,12 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 ICACHE_FLASH_ATTR void vsTask(void *pvParams) {
 	uint8_t b[1024];
 
+	VS1053_HW_init();
+	Delay(300);
+	VS1053_Start();
+	VS1053_SetVolume(40);
+	Delay(100);
+	VS1053_SPI_SpeedUp();
 	while(1) {
 		if(playing) {
 			uint16_t size = bufferRead(b, 1024), s = 0;
@@ -389,7 +397,7 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 					cstatus = C_PLAYLIST;
 					sprintf(buffer, "GET %s HTTP/1.1\r\nHOST: %s\r\n\r\n", clientPath,clientURL); //ask the playlist
 				  }
-				  else sprintf(buffer, "GET %s HTTP/1.1\r\nHOST: %s\r\nicy-metadata:0\r\n\r\n", clientPath,clientURL); //jpc HTTP 1.1
+				  else sprintf(buffer, "GET %s HTTP/1.0\r\nHOST: %s\r\nicy-metadata:0\r\n\r\n", clientPath,clientURL); //jpc HTTP 1.1
 				}
 				printf(buffer);
 				send(sockfd, buffer, strlen(buffer), 0);
