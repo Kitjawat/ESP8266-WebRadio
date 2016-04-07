@@ -1,5 +1,4 @@
 #include "webclient.h"
-
 #include "webserver.h"
 
 #include "lwip/sockets.h"
@@ -110,6 +109,29 @@ ICACHE_FLASH_ATTR struct icyHeader* clientGetHeader()
 	return &header;
 }
 
+ICACHE_FLASH_ATTR void clientParsePlaylist(char* s)
+{
+  char* str = strstr(s,"http://");
+  char path[100];
+  char url[100]; 
+  int i = 0; int j = 0;
+
+  if (str != NULL)
+  {
+  str +=7; //skip http
+  while (str[i] != '/') {url[j] = str[i]; i++ ;j++;}
+  url[j] = 0;
+  j = 0;
+  while ((str[i] != '\n')&&(str[i] != 0)) {path[j] = str[i]; i++; j++;}
+  path[j] = 0;
+  printf("url: %s, path: %s",url,path);
+  clientSetURL(url);
+  clientSetPath(path);
+  clientSetPort(80);
+  }
+
+}
+
 ICACHE_FLASH_ATTR void clientParseHeader(char* s)
 {
 	// icy-notice1 icy-notice2 icy-name icy-genre icy-url icy-br
@@ -164,7 +186,7 @@ ICACHE_FLASH_ATTR uint16_t clientProcessMetadata(char* s, uint16_t size)
 	uint16_t processed = 0;
 	if(metasize == 0) { metasize = s[0]*16; processed = 1; }
 	if(metasize == 0) return 1; // THERE IS NO METADATA
-	
+
 	if(processed == 1) // BEGINNING OF NEW METADATA; PREPARE MEMORY SPACE
 	{
 		if(header.members.single.metadata != NULL) free(header.members.single.metadata);
@@ -230,7 +252,7 @@ ICACHE_FLASH_ATTR void clientConnect()
 	cstatus = C_HEADER;
 	metacount = 0;
 	metasize = 0;
-	
+
 	//if(netconn_gethostbyname(clientURL, &ipAddress) == ERR_OK) {
 	if(server) free(server);
 	if((server = (struct hostent*)gethostbyname(clientURL))) {
@@ -256,7 +278,18 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 		- Buffer underflow handling (?)
 	*/
 	static int metad = -1;
-	if(cstatus == C_HEADER)	{
+	uint16_t l ;
+
+	switch (cstatus)
+	{
+	case C_PLAYLIST:
+	    printf("Byte_list = %s\n",pdata);
+		clientDisconnect();
+        clientParsePlaylist(pdata);
+//		clientConnect();
+    break;
+	case C_HEADER:
+	    printf("Byte_read = %s\n",pdata);
 		clientParseHeader(pdata);
 		if(header.members.single.metaint > 0) metad = header.members.single.metaint;
 		char *t1 = strstr(pdata, "\r\n\r\n"); // END OF HEADER
@@ -266,8 +299,9 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 			int newlen = len - (t1-pdata) - 4;
 			if(newlen > 0) clientReceiveCallback(NULL, t1+4, newlen);
 		}
-	} else {
-		uint16_t l = 0;
+	break;
+	default:
+		l = 0;
 		char* buf = pdata;
 		/*if(len > metad) {
 			int l = pdata[metad+1]*16;
@@ -279,16 +313,17 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 			if(getBufferFree() < len) vTaskDelay(1);
 			else l = bufferWrite(buf, len);
 		} while(l < len);
-		
-		if(!playing && getBufferFree() < BUFFER_SIZE/2) { 
+
+		if(!playing && getBufferFree() < BUFFER_SIZE/2) {
 			playing=1;
-		}	
-	}
+		}
+	break;	
+    }
 }
 
 ICACHE_FLASH_ATTR void vsTask(void *pvParams) {
 	uint8_t b[1024];
-	
+
 	while(1) {
 		if(playing) {
 			uint16_t size = bufferRead(b, 1024), s = 0;
@@ -304,12 +339,12 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 	int sockfd, bytes_read;
 	struct sockaddr_in dest;
 	uint8_t buffer[1024];
-	
+
 	while(1) {
 		xSemaphoreGive(sConnected);
-		
+
 		if(xSemaphoreTake(sConnect, portMAX_DELAY)) {
-			
+
 			xSemaphoreTake(sDisconnect, 0);
 
 			sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -323,11 +358,20 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 			if(connect(sockfd, (struct sockaddr*)&dest, sizeof(dest)) >= 0) {
 				printf("Socket connected\n");
 				bzero(buffer, sizeof(buffer));
-				sprintf(buffer, "GET %s HTTP/1.0\r\nicy-metadata:0\r\n\r\n", clientPath);
+				
+				char *t0 = strstr(clientPath, "m3u");
+				if (t0 != NULL)  // a playlist asked
+				{
+				  cstatus = C_PLAYLIST;
+				  sprintf(buffer, "GET %s HTTP/1.1\r\nHOST: %s\r\n\r\n", clientPath,clientURL); //ask the playlist
+				}
+				else sprintf(buffer, "GET %s HTTP/1.1\r\nHOST: %s\r\nicy-metadata:0\r\n\r\n", clientPath,clientURL); //jpc HTTP 1.1
+				printf(buffer);
 				send(sockfd, buffer, strlen(buffer), 0);
 
 				do
 				{
+				    vTaskDelay(1); //jpc
 					bzero(buffer, sizeof(buffer));
 					bytes_read = recv(sockfd, buffer, sizeof(buffer), 0);
 					if ( bytes_read > 0 ) {
@@ -338,14 +382,18 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 					vTaskDelay(1);
 				}
 				while ( bytes_read > 0 );
-				
 			}
-
 			/*---Clean up---*/
+			if (bytes_read == 0 ) clientDisconnect(); //jpc
 			playing = 0;
 			bufferReset();
 			close(sockfd);
 			printf("Socket closed\n");
+			if (cstatus == C_PLAYLIST) 			
+			{
+			  clientConnect();
+			   printf("pass %d\n",5);
+			}
 		}
 	}
 }

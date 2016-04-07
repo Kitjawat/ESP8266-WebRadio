@@ -23,6 +23,14 @@ function playStation() {
 	xmlhttp.send("id=" + select.options[select.options.selectedIndex].id);
 	window.location.replace("/");
 }
+function stopStation() {
+	var select = document.getElementById('stationsSelect');
+	xmlhttp = new XMLHttpRequest();
+	xmlhttp.open("POST","stop",false);
+	xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+	xmlhttp.send("id=" + select.options[select.options.selectedIndex].id);
+	window.location.replace("/");
+}
 function saveSoundSettings() {
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.open("POST","sound",false);

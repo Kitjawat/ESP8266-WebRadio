@@ -32,22 +32,22 @@ void uartInterfaceTask(void *pvParameters) {
 	t = 0;
 	uart_rx_init();
 	printf("UART READY TO READ\n");
-	
-	
+
+
 	//DEBUG
 	struct station_config *config = (struct station_config *)malloc(sizeof(struct station_config));
 	if(!config) printf("Unable to create config!\n");
 	else {
 		wifi_station_disconnect();
-		sprintf(config->ssid, "linksys@Pogodna8");
-		sprintf(config->password, "Pogodna8");
+		sprintf(config->ssid, "karawin2");
+		sprintf(config->password, "lakarawin2");
 		wifi_station_set_config(config);
 		wifi_station_connect();
 		free(config);
 	}
 	//DEBUG
-	
-	
+
+
 	while(1) {
 		while(1) {
 			char c = uart_getchar();
@@ -86,17 +86,18 @@ void testtask(void* p) {
 *******************************************************************************/
 void user_init(void)
 {
+    Delay(500);
 	UART_SetBaudrate(0,115200);
 	wifi_set_opmode(STATION_MODE);
-	
+    Delay(500);
 	clientInit();
-	
 	VS1053_HW_init();
+	Delay(100);
 	VS1053_Start();
 	VS1053_SetVolume(70);
 
 	VS1053_SPI_SpeedUp();
-	
+
 	xTaskCreate(testtask, "t0", 256, NULL, 1, NULL); // DEBUG/TEST
 
 	xTaskCreate(uartInterfaceTask, "t1", 256, NULL, 1, NULL);

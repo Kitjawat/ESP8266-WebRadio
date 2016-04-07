@@ -37,7 +37,7 @@ ICACHE_FLASH_ATTR char* str_replace ( char *string, const char *substr, const ch
   }
   if( replacement == NULL ) replacement = "";
   newstr = my_strdup(string, length);
-  
+
   while ( (tok = strstr ( newstr, substr ))){
     oldstr = newstr;
     newstr = malloc ( strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) + 1 );
@@ -69,7 +69,7 @@ ICACHE_FLASH_ATTR char* serverParseCGI(char* html, int length)
   h = str_replace(h, "#ICY-GENRE#", header->members.single.genre, strlen(h));
   h = str_replace(h, "#ICY-URL#", header->members.single.url, strlen(h));
   h = str_replace(h, "#ICY-BITRATE#", header->members.single.bitrate, strlen(h));
-  
+
   sprintf(buf, "%d", 254-VS1053_GetVolume());
   h = str_replace(h, "#SOUND-VOL#", buf, strlen(h));
   sprintf(buf, "%d", VS1053_GetTreble());
@@ -148,7 +148,7 @@ ICACHE_FLASH_ATTR char* getParameterFromResponse(char* param, char* data, uint16
 
 ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int conn) {
 	if(strcmp(name, "/instant_play") == 0) {
-		if(data_size > 0) { 
+		if(data_size > 0) {
 			char* url = getParameterFromResponse("url=", data, data_size);
 			char* path = getParameterFromResponse("path=", data, data_size);
 			char* port = getParameterFromResponse("port=", data, data_size);
@@ -229,7 +229,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			free(port);
 		}
 	} else if(strcmp(name, "/play") == 0) {
-		if(data_size > 0) { 
+		if(data_size > 0) {
 			char* id = getParameterFromResponse("id=", data, data_size);
 			if(id != NULL) {
 				struct shoutcast_info* si;
@@ -247,7 +247,12 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			}
 			if(id) free(id);
 		}
+	} else if(strcmp(name, "/stop") == 0) {
+
+				clientDisconnect();
+				while(clientIsConnected()) vTaskDelay(5);
 	}
+
 	char resp[] = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 2\r\n\r\nOK";
 	write(conn, resp, strlen(resp));
 }
@@ -276,7 +281,7 @@ ICACHE_FLASH_ATTR void httpServerHandleConnection(int conn, char* buf, uint16_t 
 		uint8_t len = c_end-c;
 		if(len > 32) return;
 		strncpy(fname, c, len);
-		printf("Name: %s\n", fname);
+//		printf("Name: %s\n", fname);
 		// DATA
 		char* d_start = strstr(buf, "\r\n\r\n");
 		if(d_start > 0) {
@@ -284,14 +289,14 @@ ICACHE_FLASH_ATTR void httpServerHandleConnection(int conn, char* buf, uint16_t 
 			uint16_t len = buflen - (d_start-buf);
 			handlePOST(fname, d_start, len, conn);
 		}
-	}	
+	}
 }
 
 ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 	struct sockaddr_in server_addr, client_addr;
 	int server_sock, client_sock;
 	socklen_t sin_size;
-	
+
 	while (1) {
         bzero(&server_addr, sizeof(struct sockaddr_in));
         server_addr.sin_family = AF_INET;
@@ -331,5 +336,5 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
                 }
             }
         } while (0);
-    }	
+    }
 }

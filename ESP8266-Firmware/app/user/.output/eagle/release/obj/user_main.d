@@ -19,7 +19,7 @@
  ../../include/espressif/esp8266/uart_register.h \
  ../../include/espressif/smartconfig.h \
  ../../include/espressif/spi_flash.h ../../include/freertos/FreeRTOS.h \
- /opt/Espressif/esp-open-sdk/xtensa-lx106-elf/lib/gcc/xtensa-lx106-elf/4.8.2/include/stddef.h \
+ /home/jp/esp-open-sdk/xtensa-lx106-elf/lib/gcc/xtensa-lx106-elf/4.8.2/include/stddef.h \
  ../../include/freertos/projdefs.h \
  ../../include/freertos/FreeRTOSConfig.h \
  ../../include/freertos/portable.h ../../include/freertos/portmacro.h \

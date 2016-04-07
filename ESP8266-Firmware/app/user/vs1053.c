@@ -195,11 +195,17 @@ void VS1053_PluginLoad()
 */
 ICACHE_FLASH_ATTR void VS1053_Start(){
 	VS1053_ResetChip();
-	while(VS1053_checkDREQ() == 0);
+// these 4 lines makes board to run on mp3 mode, no soldering required anymore
+VS1053_WriteRegister(SPI_WRAMADDR, 0xc0,0x17); //address of GPIO_DDR is 0xC017
+VS1053_WriteRegister(SPI_WRAM, 0x00,0x03); //GPIO_DDR=3
+VS1053_WriteRegister(SPI_WRAMADDR, 0xc0,0x19); //address of GPIO_ODATA is 0xC019
+VS1053_WriteRegister(SPI_WRAM, 0x00,0x00); //GPIO_ODATA=0
 
+	while(VS1053_checkDREQ() == 0);
 	VS1053_WriteRegister(SPI_CLOCKF,0x60,0x00);
 	VS1053_WriteRegister(0x00, 0x08, 0x02); //0x0842 -> STREAM MODE ON
 	while(VS1053_checkDREQ() == 0);
+	VS1053_regtest();
 }
 
 ICACHE_FLASH_ATTR int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity){
