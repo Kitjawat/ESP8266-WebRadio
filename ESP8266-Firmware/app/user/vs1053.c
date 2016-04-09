@@ -45,6 +45,7 @@ ICACHE_FLASH_ATTR void VS1053_SPI_SpeedUp()
 }
 
 ICACHE_FLASH_ATTR void VS1053_SPI_SpeedDown() {
+//	spi_clock(HSPI, 4, 10); //2MHz
 	spi_clock(HSPI, 4, 10); //2MHz
 }
 
@@ -119,8 +120,7 @@ ICACHE_FLASH_ATTR void VS1053_SineTest(){
 
 ICACHE_FLASH_ATTR void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyte, uint8_t lowbyte)
 {
-    while(!spi_take_semaphore());
-//	spi_take_semaphore();
+	spi_take_semaphore();
 	VS1053_SPI_SpeedDown();
 	SDI_ChipSelect(RESET);
 	while(VS1053_checkDREQ() == 0);
@@ -136,8 +136,8 @@ ICACHE_FLASH_ATTR void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyt
 }
 
 ICACHE_FLASH_ATTR uint16_t VS1053_ReadRegister(uint8_t addressbyte){
-    while(!spi_take_semaphore());
-//	spi_take_semaphore();
+//    while(!spi_take_semaphore());
+	spi_take_semaphore();
 	VS1053_SPI_SpeedDown();
 	uint16_t result;
 	SDI_ChipSelect(RESET);
@@ -206,15 +206,18 @@ ICACHE_FLASH_ATTR void VS1053_Start(){
 	Delay(100);
 	while(VS1053_checkDREQ() == 0);
 	VS1053_WriteRegister(SPI_CLOCKF,0x60,0x00);
-	VS1053_WriteRegister(SPI_MODE, (SM_LINE1 | SM_SDINEW)>>8 , SM_RESET); // soft reset
-	VS1053_WriteRegister(0x00, 0x08, 0x02); //0x0842 -> STREAM MODE ON
+//	VS1053_WriteRegister(SPI_MODE, (SM_LINE1 | SM_SDINEW)>>8 , SM_RESET); // soft reset
+	VS1053_SoftwareReset();
+
+	VS1053_WriteRegister(SPI_MODE, SM_SDINEW>>8, SM_LAYER12); //mode 
 	while(VS1053_checkDREQ() == 0);
 	VS1053_regtest();
 }
 
 ICACHE_FLASH_ATTR int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity){
 	if(quantity < 1) return 0;
-	while(!spi_take_semaphore());
+//	while(!spi_take_semaphore());
+	spi_take_semaphore();
 	while(VS1053_checkDREQ() == 0);
 	SDI_ChipSelect(SET);
 	int o = 0;
@@ -238,7 +241,8 @@ ICACHE_FLASH_ATTR int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity){
 }
 
 ICACHE_FLASH_ATTR void VS1053_SoftwareReset(){
-	VS1053_WriteRegister(SPI_MODE,0x00,0x04);
+	VS1053_WriteRegister(SPI_MODE, SM_SDINEW>>8,SM_RESET);
+	VS1053_WriteRegister(SPI_MODE, SM_SDINEW>>8, SM_LAYER12); //mode 
 }
 
 ICACHE_FLASH_ATTR uint8_t VS1053_GetVolume(){

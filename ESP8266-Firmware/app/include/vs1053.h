@@ -48,6 +48,7 @@
 #define SPI_AICTRL3     	0x0f
 #define SM_DIFF         	0x01
 #define SM_JUMP         	0x02
+#define SM_LAYER12			0x02
 #define SM_RESET        	0x04
 #define SM_OUTOFWAV     	0x08
 #define SM_PDOWN        	0x10

@@ -341,9 +341,6 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 
 ICACHE_FLASH_ATTR void vsTask(void *pvParams) {
 	uint8_t b[1024];
-
-	VS1053_HW_init();
-	Delay(300);
 	VS1053_Start();
 	VS1053_SetVolume(40);
 	Delay(100);

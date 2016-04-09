@@ -91,17 +91,12 @@ void user_init(void)
 	wifi_set_opmode(STATION_MODE);
     Delay(900);
 	clientInit();
-/*	VS1053_HW_init();
-	Delay(300);
-	VS1053_Start();
-	VS1053_SetVolume(40);
-	Delay(100);
-	VS1053_SPI_SpeedUp();
-*/
+	VS1053_HW_init();
+
 	xTaskCreate(testtask, "t0", 256, NULL, 0, NULL); // DEBUG/TEST
 	xTaskCreate(uartInterfaceTask, "t1", 256, NULL, 1, NULL);
-	xTaskCreate(serverTask, "t2", 256, NULL, 1, NULL);
-	xTaskCreate(clientTask, "t3", 512, NULL, 2, NULL);
+	xTaskCreate(serverTask, "t2", 256, NULL, 3, NULL);
+	xTaskCreate(clientTask, "t3", 512, NULL, 3, NULL);
 	xTaskCreate(vsTask, "t4", 512, NULL, 2, NULL);
 }
 

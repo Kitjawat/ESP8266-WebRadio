@@ -260,9 +260,14 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			if(id) free(id);
 		}
 	} else if(strcmp(name, "/stop") == 0) {
-
+	            int i;
 				clientDisconnect();
-				while(clientIsConnected()) vTaskDelay(5);
+				for (i = 0;i<200;i++)
+				{
+					if (clientIsConnected()) break;
+					vTaskDelay(5);
+				}
+//				while(clientIsConnected()) vTaskDelay(5);
 	}
 
 	char resp[] = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 2\r\n\r\nOK";

@@ -3,12 +3,16 @@
 		<meta charset='utf-8'>
 		<link rel="stylesheet" href="style.css" type="text/css"/>
 		<title>Webradio administration panel</title>
+	    <style type="text/css">
+
+        </style>
 	</head>
 	<body>
 		<div id="MAIN">
 			<div id="HEAD">
-				<img src="logo.png"><p>Webradio administration panel</p>
-			</div>
+				</span><img src="logo.png">
+				<p>Webradio administration panel</p>
+		  </div>
 			<div id="CONTENT">
 				<ul class="tabs">
 				<li>
@@ -24,10 +28,11 @@
 					<h1>Select station</h1>
 					<form>
 						<p>Select station:<br>
-						<select id="stationsSelect">
+						<select id="stationsSelect"
+						style=" font-weight:bold; background-color:#C1DFFF;">
 						</select>
-						<input type="button" value="Play" onClick="playStation()">
-						<input type="button" value="Stop" onClick="stopStation()">
+						<input type="button" value="Play" style=" font-weight:bold; background-color:C1DFFF;" onClick="playStation()">
+						<input type="button" value="Pause" style="font-weight:bold; background-color:C1DFFF;" onClick="stopStation()">
 						</p>
 					</form>
 					<h1>Instant play</h1>
@@ -36,7 +41,7 @@
 						<span class="bold">URL: </span><input type="text" id="instant_url" name="url"><br>
 						<span class="bold">Port: </span><input type="text" id="instant_port" name="port" value="80"><br>
 						<span class="bold">Path: </span><input type="text" id="instant_path" name="path" value="/"><br>
-						<input type="button" value="Play" onClick="instantPlay()">
+						<input type="button" value="Play" style=" font-weight:bold; background-color:C1DFFF;"  onClick="instantPlay()">
 						</p>
 					</form>
 				</div>
@@ -54,7 +59,7 @@
 									<span class="bold">URL: </span><input type="text" id="add_url" name="url"><br>
 									<span class="bold">Port: </span><input type="text" id="add_port" name="port" value="80"><br>
 									<span class="bold">Path: </span><input type="text" id="add_path" name="path" value="/"><br>
-									<input type="button" value="Save" onClick="saveStation()">
+									<input type="button" value="Save" style="font-weight:bold; background-color:C1DFFF;" onClick="saveStation()">
 								</p>
 							</form>
 						</div>
@@ -90,10 +95,10 @@
 					<h1>Sound settings</h1>
 					<form>
 						<p>
-						<span class="bold">Treble control: </span><input type="range" id="treble_range" name="treble" onChange="onRangeChange('treble_range', 'treble_span', 1.5, false)" min=0 max=8 value=#SOUND-TREBLE#><span id="treble_span"></span><br>
-						<span class="bold">Bass enhance: </span><input type="range"  id="bass_range" name="bass" onChange="onRangeChange('bass_range', 'bass_span', 1, false)" min=0 max=15 value=#SOUND-BASS#><span id="bass_span"></span><br>
-						<span class="bold">Volume: </span><input type="range" id="vol_range" name="vol" onChange="onRangeChange('vol_range', 'vol_span', -0.5, true)" min=0 max=254 value=#SOUND-VOL#><span id="vol_span"></span><br>
-						<input type="button" onClick="saveSoundSettings()" value="Save">
+						<span class="bold"; style="width:150px;display:inline-block;">Treble control: </span><input type="range" id="treble_range" name="treble" style=" font-weight:bold; background-color:C1DFFF;" onChange="onRangeChange('treble_range', 'treble_span', 1.5, false)" min=0 max=8 value=#SOUND-TREBLE#><span id="treble_span"></span><br>
+						<span class="bold"; style="width: 150px;display:inline-block;">  Bass enhance: </span><input type="range"  id="bass_range" name="bass" style=" font-weight:bold; background-color:C1DFFF;" onChange="onRangeChange('bass_range', 'bass_span', 1, false)" min=0 max=15 value=#SOUND-BASS#><span id="bass_span"></span><br>
+						<span class="bold"; style="width:150px;display:inline-block;">        Volume: </span><input type="range" id="vol_range" name="vol" style=" font-weight:bold; background-color:C1DFFF;" onChange="onRangeChange('vol_range', 'vol_span', -0.5, true)" min=0 max=254 value=#SOUND-VOL#><span id="vol_span"></span><br>
+						<input type="button" style="font-weight:bold; background-color:C1DFFF;" onClick="saveSoundSettings()" value="Save">
 						</p>
 					</form>
 					</div>
