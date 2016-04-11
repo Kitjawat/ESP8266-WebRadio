@@ -41,7 +41,7 @@ ICACHE_FLASH_ATTR void VS1053_HW_init(){
 
 ICACHE_FLASH_ATTR void VS1053_SPI_SpeedUp()
 {
-	spi_clock(HSPI, 4, 2); //10MHz
+	spi_clock(HSPI, 4, 3); //10MHz
 }
 
 ICACHE_FLASH_ATTR void VS1053_SPI_SpeedDown() {

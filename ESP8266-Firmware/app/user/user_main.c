@@ -95,8 +95,8 @@ void user_init(void)
 
 	xTaskCreate(testtask, "t0", 256, NULL, 0, NULL); // DEBUG/TEST
 	xTaskCreate(uartInterfaceTask, "t1", 256, NULL, 1, NULL);
-	xTaskCreate(serverTask, "t2", 256, NULL, 3, NULL);
+	xTaskCreate(serverTask, "t2", 256, NULL, 2, NULL);
 	xTaskCreate(clientTask, "t3", 512, NULL, 3, NULL);
-	xTaskCreate(vsTask, "t4", 512, NULL, 2, NULL);
+	xTaskCreate(vsTask, "t4", 512, NULL, 3, NULL);
 }
 

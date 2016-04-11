@@ -15,28 +15,34 @@ function instantPlay() {
 	xmlhttp.send("url=" + document.getElementById('instant_url').value + "&port=" + document.getElementById('instant_port').value + "&path=" + document.getElementById('instant_path').value);
 	window.location.replace("/");
 }
+
+var selindex = 0;
 function playStation() {
-	var select = document.getElementById('stationsSelect');
+	select = document.getElementById('stationsSelect');
+	selindex = document.getElementById('stationsSelect').options.selectedIndex;
+	console.log("avant: " + selindex);
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.open("POST","play",false);
 	xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 	xmlhttp.send("id=" + select.options[select.options.selectedIndex].id);
-	window.location.replace("/");
+//	window.location.replace("/");
+    window.location.reload(true);
 }
 function stopStation() {
 	var select = document.getElementById('stationsSelect');
+	selindex = document.getElementById('stationsSelect').options.selectedIndex;
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.open("POST","stop",false);
 	xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 	xmlhttp.send("id=" + select.options[select.options.selectedIndex].id);
-	window.location.replace("/");
+//	window.location.replace("/");
 }
 function saveSoundSettings() {
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.open("POST","sound",false);
 	xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 	xmlhttp.send("vol=" + document.getElementById('vol_range').value + "&bass=" + document.getElementById('bass_range').value + "&treble=" + document.getElementById('treble_range').value);
-	window.location.replace("/");
+//	window.location.replace("/");
 }
 function saveStation() {
 	var file = document.getElementById('add_path').value;
@@ -100,6 +106,23 @@ function loadStations(page) {
 	var old_tbody = document.getElementById("stationsTable").getElementsByTagName('tbody')[0];
 	old_tbody.parentNode.replaceChild(new_tbody, old_tbody);
 }
+	
+function getSelIndex() {
+		xmlselindex = new XMLHttpRequest();
+		xmlselindex.onreadystatechange = function() {
+			if (xmlselindex.readyState == 4 && xmlselindex.status == 200) {
+				console.log("JSON: " + xmlselindex.responseText);
+				var arr = JSON.parse(xmlselindex.responseText);
+				if(arr["Index"].length > 0) {
+					document.getElementById("stationsSelect").options.selectedIndex = arr["Index"];
+					console.log("selIndex received " + arr["Index"]);
+				} 
+			}
+		}
+		xmlselindex.open("POST","getSelIndex",true);
+		xmlselindex.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+		xmlselindex.send();	
+}	
 function loadStationsList(max) {
 	var foundNull = false;
 	for(var id=0; id<max; id++) {
@@ -120,6 +143,9 @@ function loadStationsList(max) {
 		xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 		xmlhttp.send("id=" + id);
 	}
+	getSelIndex();
+
+
 }
 function setMainHeight(name) {
 	var minh = window.innerHeight;
@@ -127,20 +153,25 @@ function setMainHeight(name) {
 	if(h<minh) h = minh;
 	document.getElementById("MAIN").style.height = h;
 }
-document.addEventListener("DOMContentLoaded", function(event) {
+document.addEventListener("DOMContentLoaded", function() {
 	document.getElementById("tab1").addEventListener("click", function() {
 			setMainHeight("tab-content1");
 		});
 	document.getElementById("tab2").addEventListener("click", function() {
+			loadStations(1);
 			setMainHeight("tab-content2");
 		});
 	document.getElementById("tab3").addEventListener("click", function() {
 			setMainHeight("tab-content3");
+			onRangeChange('treble_range', 'treble_span', 1.5, false);
+			onRangeChange('bass_range', 'bass_span', 1, false);
+			onRangeChange('vol_range', 'vol_span', -0.5, true);
 		});
-	setMainHeight("tab-content1");
-	onRangeChange('treble_range', 'treble_span', 1.5, false);
-	onRangeChange('bass_range', 'bass_span', 1, false);
-	onRangeChange('vol_range', 'vol_span', -0.5, true);
-	loadStations(1);
+
+//	setMainHeight("tab-content1");
+//	onRangeChange('treble_range', 'treble_span', 1.5, false);
+//	onRangeChange('bass_range', 'bass_span', 1, false);
+//	onRangeChange('vol_range', 'vol_span', -0.5, true);
+//	loadStations(1);
 	loadStationsList(256);
 });

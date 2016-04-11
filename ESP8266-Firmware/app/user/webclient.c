@@ -401,7 +401,6 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 
 				do
 				{
-				    vTaskDelay(1); //jpc
 					bzero(buffer, sizeof(buffer));
 					bytes_read = recv(sockfd, buffer, sizeof(buffer), 0);
 					if ( bytes_read > 0 ) {

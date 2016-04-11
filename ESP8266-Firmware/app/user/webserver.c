@@ -14,6 +14,8 @@
 #include "flash.h"
 #include "eeprom.h"
 
+int CurId = 0;
+
 ICACHE_FLASH_ATTR char* my_strdup(char* string, int length)
 {
   char* newstr = (char*)malloc((length+1)*sizeof(char));
@@ -212,6 +214,15 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 				return;
 			}
 		}
+	} else if(strcmp(name, "/getSelIndex") == 0) {
+				char*  buf = malloc(200);
+				int i;
+				for(i = 0; i<sizeof(buf); i++) buf[i] = 0;
+				sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %d\r\n\r\n{\"Index\":\"%4d\"}", 16,CurId);
+				write(conn, buf, strlen(buf));
+				free(buf);
+
+	
 	} else if(strcmp(name, "/setStation") == 0) {
 		if(data_size > 0) {
 			char* id = getParameterFromResponse("id=", data, data_size);
@@ -241,6 +252,8 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			if(id != NULL) {
 				struct shoutcast_info* si;
 				si = getStation(atoi(id));
+				CurId = atoi(id);
+				printf("CurId set: %s\n", id);
 				if(si->domain && si->file) {
 					clientDisconnect();
 					while(clientIsConnected()) vTaskDelay(5);
