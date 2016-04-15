@@ -86,17 +86,19 @@ void testtask(void* p) {
 *******************************************************************************/
 void user_init(void)
 {
-    Delay(500);
+    Delay(400);
 	UART_SetBaudrate(0,115200);
 	wifi_set_opmode(STATION_MODE);
-    Delay(900);
+    Delay(500);
+	printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
 	clientInit();
 	VS1053_HW_init();
+//	TCP_WND = 2 * TCP_MSS;
 
-	xTaskCreate(testtask, "t0", 256, NULL, 0, NULL); // DEBUG/TEST
-	xTaskCreate(uartInterfaceTask, "t1", 256, NULL, 1, NULL);
-	xTaskCreate(serverTask, "t2", 256, NULL, 2, NULL);
-	xTaskCreate(clientTask, "t3", 512, NULL, 3, NULL);
-	xTaskCreate(vsTask, "t4", 512, NULL, 3, NULL);
+	xTaskCreate(testtask, "t0", 256, NULL, 1, NULL); // DEBUG/TEST
+	xTaskCreate(uartInterfaceTask, "t1", 256, NULL, 2, NULL);
+	xTaskCreate(serverTask, "t2", 376, NULL, 3, NULL);
+	xTaskCreate(clientTask, "t3", 512, NULL, 4, NULL);
+	xTaskCreate(vsTask, "t4", 376, NULL, 4, NULL);
 }
 

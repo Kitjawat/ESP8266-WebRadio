@@ -3,6 +3,39 @@
 ##Basic informations
 Version: 0.13<br />
 Status: under design and development
+### 2016,April (Karawin):
+- Based on https://github.com/PiotrSperka/ESP8266-WebRadio<br />
+- New development based on the new https://github.com/espressif/ESP8266_RTOS_SDK<br />
+- Compiled with [esp-open-sdk](https://github.com/pfalcon/esp-open-sdk)<br />
+- software improved, new web control<br />
+- Compatible with mobile<br />
+- Stable<br />
+- tools to save and restore the stations database<br /><br />
+- prototype made with:<br />
+-- http://fr.aliexpress.com/item/MB102-Breadboard-Power-Supply-Module-3-3V-5V-For-Solderless-Breadboard/2027279953.html (0.74 euros)<br />
+-- http://www.ebay.fr/itm/121775761053?_trksid=p2057872.m2749.l2649&ssPageName=STRK%3AMEBIDX%3AIT  (3,09 euros)<br />
+-- http://www.ebay.fr/itm/401046111343?_trksid=p2060353.m2749.l2649&ssPageName=STRK%3AMEBIDX%3AIT  (6 euros)<br />
+-- http://www.ebay.fr/itm/131683794035?_trksid=p2060353.m2749.l2649&ssPageName=STRK%3AMEBIDX%3AIT  (1.05 euros)<br />
+-- http://fr.aliexpress.com/item/USB-to-TTL-converter-UART-module-CH340G-CH340-3-3V-5V-switch/32392228218.html?detailNewVersion=2 (0.59 euro)<br />
+-- some wires ...<br /><br />
+- Wiring: <br />
+From ESP8266_ESP12( 3.3 v) to VS1053 (5 v)<br />
+REST<br />
+ADC<br />
+CH_PD to 3.3v<br />
+GPIO16 (a 1Hz output)<br />
+GPIO14 to VS1053 SCK<br />
+GPIO12 to VS1053 MISO<br />
+GPIO13 to VS1053 MOSI<br />
+<br />
+TXD to   CH340G UART rx<br />
+RXD from CH340G UART tx<br />
+GPIO05 to VS1053 XDCS<br />
+GPIO04 to VS1053 DREQ<br />
+GPIO00 to VS1053 XRST<br />
+GPIO02<br />
+GPIO15 to VS1053 XCS<br />
+<br />
 ##Used hardware
 WiFi and main MCU: ESP8266 (ESP-12 with 32Mbits flash)<br />
 Additional MCU (as a bridge UART<=>UI): AVR<br />

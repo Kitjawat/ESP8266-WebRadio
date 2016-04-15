@@ -8,6 +8,14 @@ function onRangeChange($range, $spanid, $mul, $rotate) {
 	if($rotate) val = document.getElementById($range).max - val;
 	document.getElementById($spanid).innerHTML = (val * $mul) + " dB";
 }
+function onRangeVolChange($value) {
+	var val = document.getElementById('vol_range').max - $value;
+	document.getElementById('vol1_span').innerHTML = (val * -0.5) + " dB";
+	document.getElementById('vol_span').innerHTML = (val * -0.5) + " dB";
+	document.getElementById('vol_range').value = $value;
+	document.getElementById('vol1_range').value = $value;
+	saveSoundSettings();
+}
 function instantPlay() {
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.open("POST","instant_play",false);
@@ -20,7 +28,6 @@ var selindex = 0;
 function playStation() {
 	select = document.getElementById('stationsSelect');
 	selindex = document.getElementById('stationsSelect').options.selectedIndex;
-	console.log("avant: " + selindex);
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.open("POST","play",false);
 	xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
@@ -44,6 +51,7 @@ function saveSoundSettings() {
 	xmlhttp.send("vol=" + document.getElementById('vol_range').value + "&bass=" + document.getElementById('bass_range').value + "&treble=" + document.getElementById('treble_range').value);
 //	window.location.replace("/");
 }
+
 function saveStation() {
 	var file = document.getElementById('add_path').value;
 	var url = document.getElementById('add_url').value;
@@ -102,7 +110,7 @@ function loadStations(page) {
 		xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 		xmlhttp.send("id=" + id);
 	}
-	console.log(new_tbody);
+//	console.log(new_tbody);
 	var old_tbody = document.getElementById("stationsTable").getElementsByTagName('tbody')[0];
 	old_tbody.parentNode.replaceChild(new_tbody, old_tbody);
 }
@@ -111,15 +119,16 @@ function getSelIndex() {
 		xmlselindex = new XMLHttpRequest();
 		xmlselindex.onreadystatechange = function() {
 			if (xmlselindex.readyState == 4 && xmlselindex.status == 200) {
-				console.log("JSON: " + xmlselindex.responseText);
+//				console.log("JSON: " + xmlselindex.responseText);
 				var arr = JSON.parse(xmlselindex.responseText);
 				if(arr["Index"].length > 0) {
 					document.getElementById("stationsSelect").options.selectedIndex = arr["Index"];
-					console.log("selIndex received " + arr["Index"]);
+					document.getElementById("stationsSelect").disabled = false;
+//					console.log("selIndex received " + arr["Index"]);
 				} 
 			}
 		}
-		xmlselindex.open("POST","getSelIndex",true);
+		xmlselindex.open("POST","getSelIndex",false);
 		xmlselindex.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 		xmlselindex.send();	
 }	
@@ -139,6 +148,7 @@ function loadStationsList(max) {
 				} else foundNull = true;
 			}
 		}
+		document.getElementById("stationsSelect").disabled = true;
 		xmlhttp.open("POST","getStation",false);
 		xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 		xmlhttp.send("id=" + id);
@@ -173,5 +183,7 @@ document.addEventListener("DOMContentLoaded", function() {
 //	onRangeChange('bass_range', 'bass_span', 1, false);
 //	onRangeChange('vol_range', 'vol_span', -0.5, true);
 //	loadStations(1);
-	loadStationsList(256);
+	loadStationsList(192);
+	onRangeChange('vol1_range', 'vol1_span', -0.5, true);
+	setMainHeight("tab-content1");
 });

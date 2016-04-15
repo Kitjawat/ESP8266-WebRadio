@@ -216,7 +216,6 @@ ICACHE_FLASH_ATTR void VS1053_Start(){
 
 ICACHE_FLASH_ATTR int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity){
 	if(quantity < 1) return 0;
-//	while(!spi_take_semaphore());
 	spi_take_semaphore();
 	while(VS1053_checkDREQ() == 0);
 	SDI_ChipSelect(SET);
