@@ -35,12 +35,11 @@ GPIO04 to VS1053 DREQ<br />
 GPIO00 to VS1053 XRST<br />
 GPIO02<br />
 GPIO15 to VS1053 XCS<br />
-
-
+<br />
 ##Used hardware
 WiFi and main MCU: ESP8266 (ESP-12 with 32Mbits flash)<br />
+Additional MCU (as a bridge UART<=>UI): AVR<br />
 Audio decoder: VS1053<br />
-
 ##TODO list
 ###ESP8266
 -**[NORMAL]**Metadata processing<br />
