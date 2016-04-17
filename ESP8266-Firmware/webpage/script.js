@@ -9,6 +9,7 @@ function onRangeChange($range, $spanid, $mul, $rotate) {
 	document.getElementById($spanid).innerHTML = (val * $mul) + " dB";
 }
 function onRangeVolChange($value) {
+
 	var val = document.getElementById('vol_range').max - $value;
 	document.getElementById('vol1_span').innerHTML = (val * -0.5) + " dB";
 	document.getElementById('vol_span').innerHTML = (val * -0.5) + " dB";
@@ -23,11 +24,9 @@ function instantPlay() {
 	xmlhttp.send("url=" + document.getElementById('instant_url').value + "&port=" + document.getElementById('instant_port').value + "&path=" + document.getElementById('instant_path').value);
 	window.location.replace("/");
 }
-
-var selindex = 0;
 function playStation() {
 	select = document.getElementById('stationsSelect');
-	selindex = document.getElementById('stationsSelect').options.selectedIndex;
+	localStorage.setItem('selindexstore', select.options.selectedIndex.toString());
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.open("POST","play",false);
 	xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
@@ -37,21 +36,20 @@ function playStation() {
 }
 function stopStation() {
 	var select = document.getElementById('stationsSelect');
-	selindex = document.getElementById('stationsSelect').options.selectedIndex;
+	localStorage.setItem('selindexstore', select.options.selectedIndex.toString());
 	xmlhttp = new XMLHttpRequest();
-	xmlhttp.open("POST","stop",false);
+	xmlhttp.open("POST","stop",true);
 	xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 	xmlhttp.send("id=" + select.options[select.options.selectedIndex].id);
 //	window.location.replace("/");
 }
 function saveSoundSettings() {
 	xmlhttp = new XMLHttpRequest();
-	xmlhttp.open("POST","sound",false);
+	xmlhttp.open("POST","sound",true);
 	xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 	xmlhttp.send("vol=" + document.getElementById('vol_range').value + "&bass=" + document.getElementById('bass_range').value + "&treble=" + document.getElementById('treble_range').value);
 //	window.location.replace("/");
 }
-
 function saveStation() {
 	var file = document.getElementById('add_path').value;
 	var url = document.getElementById('add_url').value;
@@ -80,11 +78,12 @@ function editStation(id) {
 	xmlhttp.open("POST","getStation",false);
 	xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 	xmlhttp.send("id=" + id);
+	sessionStorage.clear();
 }
 function loadStations(page) {
 	var new_tbody = document.createElement('tbody');
 	var id = 16 * (page-1);
-	for(id; id < 16*page; id++) {
+	for(id; id < 16*page; id++) {	
 		xmlhttp = new XMLHttpRequest();
 		xmlhttp.onreadystatechange = function() {
 			if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
@@ -113,50 +112,74 @@ function loadStations(page) {
 //	console.log(new_tbody);
 	var old_tbody = document.getElementById("stationsTable").getElementsByTagName('tbody')[0];
 	old_tbody.parentNode.replaceChild(new_tbody, old_tbody);
+	setMainHeight("tab-content2");
 }
-	
-function getSelIndex() {
-		xmlselindex = new XMLHttpRequest();
-		xmlselindex.onreadystatechange = function() {
-			if (xmlselindex.readyState == 4 && xmlselindex.status == 200) {
-//				console.log("JSON: " + xmlselindex.responseText);
-				var arr = JSON.parse(xmlselindex.responseText);
-				if(arr["Index"].length > 0) {
-					document.getElementById("stationsSelect").options.selectedIndex = arr["Index"];
-					document.getElementById("stationsSelect").disabled = false;
-//					console.log("selIndex received " + arr["Index"]);
-				} 
-			}
-		}
-		xmlselindex.open("POST","getSelIndex",false);
-		xmlselindex.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-		xmlselindex.send();	
-}	
+
 function loadStationsList(max) {
 	var foundNull = false;
+	document.getElementById("stationsSelect").disabled = true;
 	for(var id=0; id<max; id++) {
 		if (foundNull) break;
-		xmlhttp = new XMLHttpRequest();
-		xmlhttp.onreadystatechange = function() {
-			if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-				var arr = JSON.parse(xmlhttp.responseText);
-				if(arr["Name"].length > 0) {
+
+			xmlhttp = new XMLHttpRequest();
+			xmlhttp.onreadystatechange = function() {			
+				if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+					arr = JSON.parse(xmlhttp.responseText);
+					sessionStorage.setItem(idstr,xmlhttp.responseText);
+					if(arr["Name"].length > 0) {
+						var opt = document.createElement('option');
+						opt.appendChild(document.createTextNode(arr["Name"]));
+						opt.id = id;
+						document.getElementById("stationsSelect").appendChild(opt);
+					} else foundNull = true;
+				}
+			}
+
+
+
+
+		idstr = id.toString();
+		if (sessionStorage.getItem(idstr) != null)
+		{	
+			var arr = JSON.parse(sessionStorage.getItem(idstr));
+			if(arr["Name"].length > 0) 
+			{
 					var opt = document.createElement('option');
 					opt.appendChild(document.createTextNode(arr["Name"]));
 					opt.id = id;
 					document.getElementById("stationsSelect").appendChild(opt);
-				} else foundNull = true;
+			} else foundNull = true;
+		}
+		else
+		{
+			xmlhttp.open("POST","getStation",false);
+			xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+			xmlhttp.send("id=" + id);
+		}
+	}
+	document.getElementById("stationsSelect").disabled = false;
+	select = document.getElementById('stationsSelect');
+	select.options.selectedIndex= parseInt(localStorage.getItem('selindexstore'));
+//	getSelIndex();
+}
+/*	
+function getSelIndex() {
+		xmlselindex = new XMLHttpRequest();
+		xmlselindex.onreadystatechange = function() {
+			if (xmlselindex.readyState == 4 && xmlselindex.status == 200) {
+				console.log("JSON: " + xmlselindex.responseText);
+				var arr = JSON.parse(xmlselindex.responseText);
+				if(arr["Index"].length > 0) {
+					document.getElementById("stationsSelect").options.selectedIndex = arr["Index"];
+					document.getElementById("stationsSelect").disabled = false;
+					console.log("selIndex received " + arr["Index"]);
+				} 
 			}
 		}
-		document.getElementById("stationsSelect").disabled = true;
-		xmlhttp.open("POST","getStation",false);
-		xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-		xmlhttp.send("id=" + id);
-	}
-	getSelIndex();
-
-
-}
+		xmlselindex.open("POST","getSelIndex",true);
+		xmlselindex.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+		xmlselindex.send();	
+}	*/
 function setMainHeight(name) {
 	var minh = window.innerHeight;
 	var h = document.getElementById(name).offsetHeight + 200;

@@ -3,7 +3,7 @@
 		<meta charset='ISO-8859-1'>
 		<meta name="viewport" content="width=device-width, minimum-scale=0.25"/>
 		<link rel="stylesheet" href="style.css" type="text/css"/>
-		<title>Webradio administration panel</title>
+		<title>Wifi Webradio Control</title>
 	    <style type="text/css">
         </style>
 	</head>
@@ -12,7 +12,7 @@
 		<div id="MAIN">
 			<div id="HEAD">
 				</span><img src="logo.png">
-				<p>Webradio administration panel</p>
+				<p>Wifi Webradio Control</p>
 		  </div>
 			<div id="CONTENT">
 				<ul class="tabs">
@@ -37,7 +37,7 @@
 						<input type="button" value="Stop"  onClick="stopStation()">
                         </p
 						><p><span class="bold">Volume:</span><br/> 
-						<input type="range" id="vol1_range" name="vol1" style=" font-weight:bold; background-color:C1DFFF;" onChange="onRangeVolChange(this.value)" min=0 max=254 value=#SOUND-VOL#><span id="vol1_span"></span><br>
+						<input type="range" id="vol1_range" name="vol1" style=" font-weight:bold; background-color:C1DFFF;" onChange="onRangeVolChange(this.value)" min=100 max=254 value=#SOUND-VOL#><span id="vol1_span"></span><br>
 						</p>
 					</form>
 					<h1>Instant play</h1>
@@ -71,7 +71,7 @@
 						<h1>Manage stations</h1>
 						<table id = "stationsTable">
 							<thead><tr><td style="width:10%">No.</td><td style="width:20%">Name</td><td style="width:20%">URL</td><td style="width:30%">File</td><td style="width:10%">Port</td><td style="width:10%">-</td></tr></thead>
-							<tbody></tbody>
+							<tbody><br/></tbody>
 						</table>
 						<div>
 							<a class="page" href="#" onClick="loadStations(1);">1</a>
@@ -100,7 +100,7 @@
 						<span class="bold"; style="width: 150px;display:inline-block;">  Bass enhance: </span><input type="range"  id="bass_range" name="bass" style=" font-weight:bold; background-color:C1DFFF;" onChange="onRangeChange('bass_range', 'bass_span', 1, false)" min=0 max=15 value=#SOUND-BASS#><span id="bass_span"></span><br>
 						<input type="button"  onClick="saveSoundSettings()" value="Save">
 						<br/><br/>
-						<span class="bold"; style="width:150px;display:inline-block;">        Volume: </span><input type="range" id="vol_range" name="vol" style=" font-weight:bold; background-color:C1DFFF;" onChange="onRangeVolChange(this.value)" min=0 max=254 value=#SOUND-VOL#><span id="vol_span"></span><br>
+						<span class="bold"; style="width:150px;display:inline-block;">        Volume: </span><input type="range" id="vol_range" name="vol" style=" font-weight:bold; background-color:C1DFFF;" onChange="onRangeVolChange(this.value)" min=100 max=254 value=#SOUND-VOL#><span id="vol_span"></span><br>
 						</p>
 					</form>
 					</div>

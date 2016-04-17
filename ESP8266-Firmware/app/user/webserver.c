@@ -254,7 +254,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 				}
 			}
 		}
-	} else if(strcmp(name, "/getSelIndex") == 0) {
+	}/* else if(strcmp(name, "/getSelIndex") == 0) {
 				char*  buf = malloc(150);
 				int i;
 				for(i = 0; i<sizeof(buf); i++) buf[i] = 0;
@@ -263,7 +263,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 				free(buf);
 
 	
-	} else if(strcmp(name, "/setStation") == 0) {
+	}*/ else if(strcmp(name, "/setStation") == 0) {
 		if(data_size > 0) {
 			char* id = getParameterFromResponse("id=", data, data_size);
 			char* url = getParameterFromResponse("url=", data, data_size);

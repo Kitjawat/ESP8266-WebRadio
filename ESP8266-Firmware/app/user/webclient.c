@@ -439,7 +439,6 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 
 				do
 				{
-//					vTaskDelay(2);
 					bzero(buffer, sizeof(buffer));
 					bytes_read = recv(sockfd, buffer, sizeof(buffer), 0);
 //					printf ("Client: received %d bytes\n", bytes_read);
@@ -449,7 +448,7 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 					}	
 					if(xSemaphoreTake(sDisconnect, 0)) break;
 					xSemaphoreTake(sConnected, 0);
-					vTaskDelay(2);
+					vTaskDelay(1);
 				}
 				while ( bytes_read > 0 );
 			} else printf("Socket fails to connect\n");
