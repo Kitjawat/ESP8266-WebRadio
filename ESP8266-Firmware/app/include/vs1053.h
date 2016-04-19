@@ -81,16 +81,18 @@ void 	VS1053_VolumeUp(uint8_t xHalfdB);
 void	VS1053_VolumeDown(uint8_t xHalfdB);
 //Treble control
 uint8_t	VS1053_GetTreble();
-void	VS1053_SetTreble(uint8_t xOneAndHalfdB);
+void	VS1053_SetTreble(int8_t xOneAndHalfdB);
 void	VS1053_TrebleUp(uint8_t xOneAndHalfdB);
 void	VS1053_TrebleDown(uint8_t xOneAndHalfdB);
 void	VS1053_SetTrebleFreq(uint8_t xkHz);
+int8_t	VS1053_GetTrebleFreq(void);
 //Bass control
 uint8_t	VS1053_GetBass();
 void	VS1053_SetBass(uint8_t xdB);
 void	VS1053_BassUp(uint8_t xdB);
 void	VS1053_BassDown(uint8_t xdB);
 void	VS1053_SetBassFreq(uint8_t xTenHz);
+uint8_t	VS1053_GetBassFreq(void);
 
 //private functions
 void SPIPutChar(uint8_t outB);

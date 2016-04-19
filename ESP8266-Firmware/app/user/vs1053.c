@@ -270,15 +270,15 @@ ICACHE_FLASH_ATTR uint8_t	VS1053_GetTreble(){
  * @note If xOneAndHalfdB is greater than max value, sets treble
  * 		to maximum.
  * @param xOneAndHalfdB describes level of enhancement. It is a multiplier
- * 		of 1.5dB. 0 - no enhancement, 8 - maximum, 12dB.
+ * 		of 1.5dB. 0 - no enhancement, -8 minimum -12dB , 7 - maximum, 10.5dB.
  * @return void
  */
-ICACHE_FLASH_ATTR void VS1053_SetTreble(uint8_t xOneAndHalfdB){
+ICACHE_FLASH_ATTR void VS1053_SetTreble(int8_t xOneAndHalfdB){
 	uint16_t bassReg = VS1053_ReadRegister(SPI_BASS);
-	if ( xOneAndHalfdB <= 8)
+	if (( xOneAndHalfdB <= 7) && ( xOneAndHalfdB >=-8))
 		VS1053_WriteRegister( SPI_BASS, MaskAndShiftRight(bassReg,0x0F00,8) | (xOneAndHalfdB << 4), bassReg & 0x00FF );
-	else
-		VS1053_WriteRegister( SPI_BASS, MaskAndShiftRight(bassReg,0x0F00,8) | 0x80, bassReg & 0x00FF );
+//	else
+//		VS1053_WriteRegister( SPI_BASS, MaskAndShiftRight(bassReg,0x0F00,8) | 0x80, bassReg & 0x00FF );
 }
 
 /**
@@ -292,6 +292,9 @@ ICACHE_FLASH_ATTR void VS1053_SetTrebleFreq(uint8_t xkHz){
 	uint16_t bassReg = VS1053_ReadRegister(SPI_BASS);
 	if ( xkHz <= 15 )
 		VS1053_WriteRegister( SPI_BASS, MaskAndShiftRight(bassReg,0xF000,8) | xkHz, bassReg & 0x00FF );
+}
+ICACHE_FLASH_ATTR int8_t	VS1053_GetTrebleFreq(){
+	return ( (VS1053_ReadRegister(SPI_BASS) & 0x0F00) >> 8);
 }
 
 /**
@@ -327,6 +330,9 @@ ICACHE_FLASH_ATTR void VS1053_SetBassFreq(uint8_t xTenHz){
 	uint16_t bassReg = VS1053_ReadRegister(SPI_BASS);
 	if (xTenHz >=2 && xTenHz <= 15)
 		VS1053_WriteRegister(SPI_BASS, MaskAndShiftRight(bassReg,0xFF00,8), (bassReg & 0x00F0) | xTenHz );
+}
+ICACHE_FLASH_ATTR uint8_t	VS1053_GetBassFreq(){
+	return ( (VS1053_ReadRegister(SPI_BASS) & 0x000F) );
 }
 
 ICACHE_FLASH_ATTR uint16_t VS1053_GetDecodeTime(){

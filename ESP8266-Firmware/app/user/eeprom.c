@@ -87,10 +87,23 @@ ICACHE_FLASH_ATTR void saveStation(struct shoutcast_info *station, uint8_t posit
 
 ICACHE_FLASH_ATTR struct shoutcast_info* getStation(uint8_t position) {
 	uint8_t* buffer = malloc(256);
-	if(buffer) {
-		eeGetData((position+1)*256, buffer, 256);
-		return (struct shoutcast_info*)buffer;
-	} else return NULL;
+	while (buffer== NULL)
+	{
+		buffer = malloc(256);
+        if ( buffer == NULL ){
+			int i = 0;
+			do { 
+			i++;		
+			printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
+			vTaskDelay(10);
+			printf("getstation malloc fails for %d\n",256 );
+			}
+			while (i<10);
+			if (i >=10) { /*free(string);*/ return NULL;}
+		} 		
+	}
+	eeGetData((position+1)*256, buffer, 256);
+	return (struct shoutcast_info*)buffer;
 }
 
 ICACHE_FLASH_ATTR void saveDeviceSettings(struct device_settings *settings) {

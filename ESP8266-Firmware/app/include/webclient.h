@@ -6,7 +6,6 @@ struct icyHeader
 {
 	union
 	{
-		char* mArr[ICY_HEADERS_COUNT];
 		struct
 		{
 			char* name;
@@ -20,6 +19,7 @@ struct icyHeader
 			char* metadata;
 			int metaint;
 		} single;
+		char* mArr[ICY_HEADERS_COUNT];
 	} members;
 };
 

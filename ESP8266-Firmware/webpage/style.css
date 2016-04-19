@@ -81,16 +81,22 @@ html, body
 	color: #666;
 }
 
+
 #CONTENT span.bold
 {
 	font-weight: 900;
 }
-
 #CONTENT form
 {
 	font: 16px "Trebuchet MS";
 }
 
+.tabs span.bold
+{
+	font-weight: 900;
+	width:150px;
+	display:inline-block;
+}
 .tabs {
   width: calc(100%-20px);
   float: none;
@@ -108,11 +114,29 @@ html, body
   top: -9999px;
   left: -9999px;
 }
+
+.tabs input[type=range]
+{
+  font-weight:bold;
+  background-color:C1DFFF;
+  
+}
 .tabs input[type="button"] {
   font-size: 14px;
   font-weight:bold;
+  height: 40px;
   background-color:C1DFFF;
 }
+.tabs input[type="select"]
+{
+  font-weight:bold;
+  background-color:#C1DFFF;	
+    margin: 50px;
+  border: 1px solid #111;
+  border: 1px solid #ccc;
+  height: 40px;
+}
+
 .tabs label {
   display: block;
   padding: 14px 14px;

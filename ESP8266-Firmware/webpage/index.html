@@ -11,7 +11,7 @@
 	<script src="script.js"></script>
 		<div id="MAIN">
 			<div id="HEAD">
-				</span><img src="logo.png">
+				<img src="logo.png">
 				<p>Wifi Webradio Control</p>
 		  </div>
 			<div id="CONTENT">
@@ -30,14 +30,13 @@
 					<h1>stations</h1>
 					<form>
 						<p><span class="bold">Select station:</span><br>
-						<select id="stationsSelect" 
-						style=" font-weight:bold; background-color:#C1DFFF;">
+						<select id="stationsSelect" >
 						</select>
 						<input type="button" value="Play"  onClick="playStation()">
 						<input type="button" value="Stop"  onClick="stopStation()">
                         </p
 						><p><span class="bold">Volume:</span><br/> 
-						<input type="range" id="vol1_range" name="vol1" style=" font-weight:bold; background-color:C1DFFF;" onChange="onRangeVolChange(this.value)" min=100 max=254 value=#SOUND-VOL#><span id="vol1_span"></span><br>
+						<input type="range" id="vol1_range" name="vol1"  onChange="onRangeVolChange(this.value)" min=100 max=254 value=#SOUND-VOL#><span id="vol1_span"></span><br>
 						</p>
 					</form>
 					<h1>Instant play</h1>
@@ -70,8 +69,12 @@
 						</div>
 						<h1>Manage stations</h1>
 						<table id = "stationsTable">
-							<thead><tr><td style="width:10%">No.</td><td style="width:20%">Name</td><td style="width:20%">URL</td><td style="width:30%">File</td><td style="width:10%">Port</td><td style="width:10%">-</td></tr></thead>
-							<tbody><br/></tbody>
+							<thead><tr><td style="width:10%">No.</td><td style="width:20%">Name</td><td style="width:20%">URL</td><td style="width:30%">File</td><td style="width:10%">Port</td><td style="width:10%"></td></tr></thead>
+							<tbody>  
+							<tr>
+                                <td>By KaraWin</td>
+							</tr>
+							</tbody>
 						</table>
 						<div>
 							<a class="page" href="#" onClick="loadStations(1);">1</a>
@@ -96,18 +99,24 @@
 					<h1>Sound settings</h1>
 					<form>
 						<p>
-						<span class="bold"; style="width:150px;display:inline-block;">Treble control: </span><input type="range" id="treble_range" name="treble" style=" font-weight:bold; background-color:C1DFFF;" onChange="onRangeChange('treble_range', 'treble_span', 1.5, false)" min=0 max=8 value=#SOUND-TREBLE#><span id="treble_span"></span><br>
-						<span class="bold"; style="width: 150px;display:inline-block;">  Bass enhance: </span><input type="range"  id="bass_range" name="bass" style=" font-weight:bold; background-color:C1DFFF;" onChange="onRangeChange('bass_range', 'bass_span', 1, false)" min=0 max=15 value=#SOUND-BASS#><span id="bass_span"></span><br>
-						<input type="button"  onClick="saveSoundSettings()" value="Save">
-						<br/><br/>
-						<span class="bold"; style="width:150px;display:inline-block;">        Volume: </span><input type="range" id="vol_range" name="vol" style=" font-weight:bold; background-color:C1DFFF;" onChange="onRangeVolChange(this.value)" min=100 max=254 value=#SOUND-VOL#><span id="vol_span"></span><br>
+						<span class="bold";>Treble control: </span><input type="range" id="treble_range" name="treble"  onChange="onRangeChange('treble_range', 'treble_span', 1.5, false)" min=-8 max=7 value=#SOUND-TREBLE#><span id="treble_span"></span><br>
+						<span class="bold";>Treble frequency: </span><input type="range" id="treblefreq_range" name="treble"  onChange="onRangeChangeFreqTreble('treblefreq_range', 'treblefreq_span', 1, false)" min=1 max=15 value=#SOUND-TREBLE-FREQ#><span id="treblefreq_span"></span><br>
+						<span class="bold";>  Bass enhance: </span><input type="range"  id="bass_range" name="bass"  onChange="onRangeChange('bass_range', 'bass_span', 1, false)" min=0 max=15 value=#SOUND-BASS#><span id="bass_span"></span><br>
+						<span class="bold";>  Bass frequency: </span><input type="range"  id="bassfreq_range" name="bass"  onChange="onRangeChangeFreqBass('bassfreq_range', 'bassfreq_span', 10, false)" min=2 max=15 value=#SOUND-BASS-FREQ#><span id="bassfreq_span"></span><br>
+						<br/>
+						
+						<span class="bold"; >Volume: </span><input type="range" id="vol_range" name="vol" style=" font-weight:bold; background-color:C1DFFF;" onChange="onRangeVolChange(this.value)" min=100 max=254 value=#SOUND-VOL#><span id="vol_span"></span><br>
 						</p>
+					</form>
+					<h1>Stations settings</h1>
+					<form>
+						<input type="button"  onClick="saveSoundSettings()" value="Save Stations">
+						<input type="button"  onClick="saveSoundSettings()" value="Load Stations">
 					</form>
 					</div>
 				</li>
 				</ul>
 			</div>
-		</div>
-		
+		</div>		
 	</body>
 </HTML>

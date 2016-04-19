@@ -10,7 +10,6 @@
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
-
 #include "flash.h"
 #include "eeprom.h"
 
@@ -19,13 +18,24 @@ int CurId = 0;
 ICACHE_FLASH_ATTR char* my_strdup(char* string, int length)
 {
   char* newstr = (char*)malloc((length+1)*sizeof(char));
-  if(newstr != NULL)
-  {
+  while (newstr == NULL)
+	{
+		newstr = (char*)malloc((length+1)*sizeof(char));
+        if ( newstr == NULL ){
+			int i = 0;
+			do { 
+			i++;		
+			printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
+			vTaskDelay(10);
+			printf("strdup malloc fails for %d\n",(length+1)*sizeof(char) );
+			}
+			while (i<10);
+			if (i >=10) { /*free(string);*/ return NULL;}
+		} 		
+	}
     int i;
     for(i=0; i<length+1; i++) if(i < length) newstr[i] = string[i]; else newstr[i] = 0;
-  }
-  else (printf("strdup malloc fails\n"));
-  return newstr;
+	return newstr;
 }
 
 ICACHE_FLASH_ATTR char* str_replace ( char *string, const char *substr, const char *replacement, int length ){
@@ -34,14 +44,12 @@ ICACHE_FLASH_ATTR char* str_replace ( char *string, const char *substr, const ch
   char *oldstr = NULL;
   /* if either substr or replacement is NULL, duplicate string a let caller handle it */
   if ( substr == NULL ) {
-/*    newstr = my_strdup(string, length);
-    free(string);
-    return newstr;*/
 	return string;
   }
   if( replacement == NULL ) replacement = "";
-  newstr = my_strdup(string, length);
-   free(string);
+/*  newstr = my_strdup(string, length);
+  free(string);*/
+  newstr = string;
   while ( (tok = strstr ( newstr, substr ))){
     oldstr = newstr;
 	newstr = NULL;
@@ -96,6 +104,10 @@ ICACHE_FLASH_ATTR char* serverParseCGI(char* html, int length)
   h = str_replace(h, "#SOUND-TREBLE#", buf, strlen(h));
   sprintf(buf, "%d", VS1053_GetBass());
   h = str_replace(h, "#SOUND-BASS#", buf, strlen(h));
+  sprintf(buf, "%d", VS1053_GetTrebleFreq());
+  h = str_replace(h, "#SOUND-TREBLE-FREQ#", buf, strlen(h));
+  sprintf(buf, "%d", VS1053_GetBassFreq());
+  h = str_replace(h, "#SOUND-BASS-FREQ#", buf, strlen(h));
   clientGivesHeader();
   return h;
 }
@@ -115,10 +127,11 @@ ICACHE_FLASH_ATTR struct servFile* findFile(char* name)
 ICACHE_FLASH_ATTR void serveFile(char* name, int conn)
 {
 	int length;
-	char buf[128];
+	char buf[140];
 	const char *content;
 
 	struct servFile* f = findFile(name);
+	printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
 
 	if(f != NULL)
 	{
@@ -130,21 +143,37 @@ ICACHE_FLASH_ATTR void serveFile(char* name, int conn)
 
 	if(length > 0)
 	{
-		char *con = (char*)malloc(length*sizeof(char));
-		if(con != NULL)
+		char *con = NULL;
+		while(con == NULL)
 		{
-			flashRead(con, (uint32_t)content, length);
-			if(f->cgi == 1) {
-				con = serverParseCGI(con, length);
-				length = strlen(con);
-			}
-			sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type: %s\r\nContent-Length: %d\r\nConnection: close\r\n\r\n", (f!=NULL ? f->type : "text/plain"), length);
-			write(conn, buf, strlen(buf));
-			write(conn, con, length);
-			free(con);
-		} 
-		else printf("serveFile malloc fails\n");
-
+           con = (char*)malloc(length*sizeof(char));
+			if ( con == NULL )
+			{
+				int i = 0;
+				do { 
+				i++;		
+				printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
+				vTaskDelay(10);
+				printf("servfile malloc fails for %d\n",length*sizeof(char) );
+				}
+				while (i<10);
+				if (i >=10) {
+					sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n", (f!=NULL ? f->type : "text/plain"), 0);
+					write(conn, buf, strlen(buf));
+					return ;
+				}
+			}	
+		} 			
+				
+		flashRead(con, (uint32_t)content, length);
+		if(f->cgi == 1) {
+			con = serverParseCGI(con, length);
+			length = strlen(con);
+		}
+		sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type: %s\r\nContent-Length: %d\r\nConnection: close\r\n\r\n", (f!=NULL ? f->type : "text/plain"), length);
+		write(conn, buf, strlen(buf));
+		write(conn, con, length);
+		free(con);
 	}
 	else
 	{
@@ -170,8 +199,13 @@ ICACHE_FLASH_ATTR char* getParameterFromResponse(char* param, char* data, uint16
 		}
 	} else return NULL;
 }
-
+ICACHE_FLASH_ATTR void respOk(int conn)
+{
+		char resp[] = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 2\r\n\r\nOK";
+		write(conn, resp, strlen(resp));
+}
 ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int conn) {
+	printf("HandlePost %s\n",name);
 	if(strcmp(name, "/instant_play") == 0) {
 		if(data_size > 0) {
 			char* url = getParameterFromResponse("url=", data, data_size);
@@ -191,20 +225,27 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 					vTaskDelay(5);
 				}
 //				while(!clientIsConnected()) vTaskDelay(5);
-			}
+			} 
 			if(url) free(url);
 			if(path) free(path);
 			if(port) free(port);
 		}
-	} else if(strcmp(name, "/sound") == 0) {
+	} else if(strcmp(name, "/soundvol") == 0) {
 		if(data_size > 0) {
 			char* vol = getParameterFromResponse("vol=", data, data_size);
-			char* bass = getParameterFromResponse("bass=", data, data_size);
-			char* treble = getParameterFromResponse("treble=", data, data_size);
+//			printf("/sounvol vol: %s num:%d \n",vol, atoi(vol));
 			if(vol) {
 				VS1053_SetVolume(254-atoi(vol));
 				free(vol);
 			}
+		}
+//		respOk(conn);
+	} else if(strcmp(name, "/sound") == 0) {
+		if(data_size > 0) {
+			char* bass = getParameterFromResponse("bass=", data, data_size);
+			char* treble = getParameterFromResponse("treble=", data, data_size);
+			char* bassfreq = getParameterFromResponse("bassfreq=", data, data_size);
+			char* treblefreq = getParameterFromResponse("treblefreq=", data, data_size);
 			if(bass) {
 				VS1053_SetBass(atoi(bass));
 				free(bass);
@@ -213,46 +254,44 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 				VS1053_SetTreble(atoi(treble));
 				free(treble);
 			}
+			if(bassfreq) {
+				VS1053_SetBassFreq(atoi(bassfreq));
+				free(bassfreq);
+			}
+			if(treblefreq) {
+				VS1053_SetTrebleFreq(atoi(treblefreq));
+				free(treblefreq);
+			}
 		}
 	} else if(strcmp(name, "/getStation") == 0) {
 		if(data_size > 0) {
-			char* id = getParameterFromResponse("id=", data, data_size);
+			char* id = getParameterFromResponse("idgp=", data, data_size);
 			if(id) {
-				char* buf = malloc(6);
+				char ibuf [6];	
+				char *buf;
+				int i;
+				for(i = 0; i<sizeof(ibuf); i++) ibuf[i] = 0;
+				struct shoutcast_info* si;
+				si = getStation(atoi(id));
+				sprintf(ibuf, "%d", si->port);
+				int json_length = strlen(si->domain) + strlen(si->file) + strlen(si->name) + strlen(ibuf) + 40;
+				buf = malloc(json_length + 75);
 				if (buf == NULL)
 				{	
-					printf("getStation malloc6 fails\n");
-					free(id);
-					return;
+					printf("getStation malloc fails\n");
+					respOk(conn);
 				}
-				else {	
-					int i;
+				else {				
 					for(i = 0; i<sizeof(buf); i++) buf[i] = 0;
-					struct shoutcast_info* si;
-					si = getStation(atoi(id));
-					sprintf(buf, "%d", si->port);
-					int json_length = strlen(si->domain) + strlen(si->file) + strlen(si->name) + strlen(buf) + 40;
+					sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %d\r\n\r\n{\"Name\":\"%s\",\"URL\":\"%s\",\"File\":\"%s\",\"Port\":\"%d\"}",
+						json_length, si->name, si->domain, si->file, si->port);
+					write(conn, buf, strlen(buf));
 					free(buf);
-					buf = malloc(json_length + 75);
-					if (buf == NULL)
-					{	
-						printf("getStation malloc fails\n");
-						free(si);
-						free(id);
-						return;
-					}
-					else {				
-						for(i = 0; i<sizeof(buf); i++) buf[i] = 0;
-						sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %d\r\n\r\n{\"Name\":\"%s\",\"URL\":\"%s\",\"File\":\"%s\",\"Port\":\"%d\"}",
-							json_length, si->name, si->domain, si->file, si->port);
-						write(conn, buf, strlen(buf));
-						free(si);
-						free(id);
-						free(buf);
-						return;
-					}
 				}
-			}
+				free(si);
+				free(id);
+				return;
+			} 
 		}
 	}/* else if(strcmp(name, "/getSelIndex") == 0) {
 				char*  buf = malloc(150);
@@ -278,7 +317,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 				si->port = atoi(port);
 				saveStation(si, atoi(id));
 				free(si);
-			}
+			} 
 			free(id);
 			free(url);
 			free(file);
@@ -288,15 +327,16 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 	} else if(strcmp(name, "/play") == 0) {
 		if(data_size > 0) {
 			char* id = getParameterFromResponse("id=", data, data_size);
-			int i;
 			if(id != NULL) {
 				struct shoutcast_info* si;
 				si = getStation(atoi(id));
 				CurId = atoi(id);
 				printf("CurId set: %s\n", id);
-				if(si->domain && si->file) {
+				if(si != NULL &&si->domain && si->file) {
+					int i;
+					vTaskDelay(5);
 					clientDisconnect();
-					while(clientIsConnected()) vTaskDelay(5);
+					while(clientIsConnected()) {printf("CurId set: %s\n", id);vTaskDelay(5);}
 					clientSetURL(si->domain);
 					clientSetPath(si->file);
 					clientSetPort(si->port);
@@ -313,22 +353,22 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			if(id) free(id);
 		}
 	} else if(strcmp(name, "/stop") == 0) {
-	            int i;
-				clientDisconnect();
-				for (i = 0;i<200;i++)
-				{
-					if (clientIsConnected()) break;
-					vTaskDelay(5);
-				}
-//				while(clientIsConnected()) vTaskDelay(5);
+	    int i;
+		clientDisconnect();
+		for (i = 0;i<200;i++)
+		{
+			if (clientIsConnected()) break;
+			vTaskDelay(5);
+		}
+//			while(clientIsConnected()) vTaskDelay(5);
 	}
-
-	char resp[] = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 2\r\n\r\nOK";
-	write(conn, resp, strlen(resp));
+	respOk(conn);
 }
 
 ICACHE_FLASH_ATTR void httpServerHandleConnection(int conn, char* buf, uint16_t buflen) {
 	char *c;
+	printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
+
 	if( (c = strstr(buf, "GET ")) != NULL)
 	{
 		char fname[32];
@@ -366,48 +406,60 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 	struct sockaddr_in server_addr, client_addr;
 	int server_sock, client_sock;
 	socklen_t sin_size;
-
 	while (1) {
         bzero(&server_addr, sizeof(struct sockaddr_in));
         server_addr.sin_family = AF_INET;
         server_addr.sin_addr.s_addr = INADDR_ANY;
         server_addr.sin_port = htons(80);
-
+		
         int recbytes;
 
         do {
             if (-1 == (server_sock = socket(AF_INET, SOCK_STREAM, 0))) {
-				printf ("Socket fails\n");
+				printf ("Socket fails %d\n", errno);
                 break;
             }
 
             if (-1 == bind(server_sock, (struct sockaddr *)(&server_addr), sizeof(struct sockaddr))) {
-				printf ("Bind fails\n");
+				printf ("Bind fails %d\n", errno);
                 break;
             }
 
             if (-1 == listen(server_sock, 5)) {
-				printf ("Listen fails\n");
+				printf ("Listen fails %d\n",errno);
                 break;
             }
 
             sin_size = sizeof(client_addr);
-
+			recbytes = 0;
             while(1) {
                 if ((client_sock = accept(server_sock, (struct sockaddr *) &client_addr, &sin_size)) < 0) {
 				printf ("Accept fails\n");
-                    continue;
+				   close(client_sock);
+                    break;;
                 }
-                char *buf = (char *)zalloc(2048);
+                char *buf = (char *)zalloc(1024);
 				if (buf == NULL) printf("server zalloc fails\n");	
 
-                while ((recbytes = read(client_sock , buf, 2047)) > 0) { // For now we assume max. 2047 bytes for request
+                while ((recbytes = read(client_sock , buf, 1023)) > 0) { // For now we assume max. 1023 bytes for request
 //					printf ("Server: received %d bytes, %s\n", recbytes, buf);
+					char* bend = strstr(buf, "\r\n\r\n");
+					bend += 4;
+//					printf("Server: header len : %d\n",bend-buf);
+					if ((recbytes == (bend-buf))&& (strstr(buf,"POST"))) //bug socket
+					{
+						recbytes += read(client_sock , bend, 100);
+						printf ("Server: received more:%d bytes, %s\n", recbytes, bend);
+					}
 					httpServerHandleConnection(client_sock, buf, recbytes);
                 }
                 free(buf);
 
-                if (recbytes <= 0) {
+                if (recbytes == 0) {
+                    close(client_sock);
+                }
+                if (recbytes < 0) {
+					printf ("Socket read fails %d\n", errno);
                     close(client_sock);
                 }
             }

@@ -11,7 +11,9 @@
 
 #include "vs1053.h"
 
-struct icyHeader header = {NULL, NULL, NULL, NULL, 0};
+struct icyHeader header = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,   0};
+//struct icyHeader header = {NULL, NULL, NULL, NULL, 0};
+char *metaint = NULL;
 char *clientURL = NULL;
 char *clientPath = NULL;
 uint16_t clientPort = 80;
@@ -146,7 +148,7 @@ ICACHE_FLASH_ATTR bool clientParsePlaylist(char* s)
 	  while ((str[i] != 0x0a)&&(str[i] != 0x0d)&&(str[i] != 0)&&(str[i] != '"')) {path[j] = str[i]; i++; j++;}
 	  path[j] = 0;
 	}
-	printf("url: %s, path: %s, port: %s\n",url,path,port);
+
 	if (strncmp(url,"localhost",9)!=0) clientSetURL(url);
 	clientSetPath(path);
 	clientSetPort(atoi(port));
@@ -169,8 +171,9 @@ ICACHE_FLASH_ATTR void clientParseHeader(char* s)
 	{
 		for(header_num=0; header_num<ICY_HEADERS_COUNT; header_num++) {
 			if(header_num != METAINT) if(header.members.mArr[header_num] != NULL) {
-				free(header.members.mArr[header_num]);
-				header.members.mArr[header_num] = NULL;
+//				free(header.members.mArr[header_num]);
+//				header.members.mArr[header_num] = NULL;
+				header.members.mArr[header_num][0] = 0;
 			}
 		}
 	}
@@ -187,7 +190,14 @@ ICACHE_FLASH_ATTR void clientParseHeader(char* s)
 				uint16_t len = t_end - t;
 				if(header_num != METAINT) // Text header field
 				{
-					if(header.members.mArr[header_num] != NULL) free(header.members.mArr[header_num]);
+					if((header.members.mArr[header_num] != NULL)&&((strlen(header.members.mArr[header_num])+1) < (len+1)*sizeof(char))) 
+//					if(header.members.mArr[header_num] != NULL)
+					{	// realloc if new malloc is bigger (avoid heap fragmentation)
+						free(header.members.mArr[header_num]);
+						header.members.mArr[header_num] = NULL;
+					}
+					if(header.members.mArr[header_num] == NULL) 
+//					if(header.members.mArr[header_num] != NULL) free(header.members.mArr[header_num]);
 					header.members.mArr[header_num] = (char*)malloc((len+1)*sizeof(char));
 					if(header.members.mArr[header_num] != NULL)
 					{
@@ -199,14 +209,27 @@ ICACHE_FLASH_ATTR void clientParseHeader(char* s)
 				}
 				else // Numerical header field
 				{
-					char *buf = (char*) malloc((len+1)*sizeof(char));
+					if ((metaint != NULL) && ( (strlen(metaint)+1) < ((len+1)*sizeof(char)) ))
+					{
+						free (metaint);
+						metaint = NULL;
+					}
+					if (metaint == NULL) metaint = (char*) malloc((len+1)*sizeof(char));
+					if (metaint != NULL)
+					{	
+/*					char *buf = (char*) malloc((len+1)*sizeof(char));
 					if(buf != NULL)
 					{
 						int i;
 						for(i = 0; i<len+1; i++) buf[i] = 0;
 						strncpy(buf, t, len);
 						header.members.single.metaint = atoi(buf);
-						free(buf);
+						free(buf); 
+*/						
+						int i;
+						for(i = 0; i<len+1; i++) metaint[i] = 0;
+						strncpy(metaint, t, len);
+						header.members.single.metaint = atoi(metaint);
 					}
 			printf("icy: %s: %d\n",icyHeaders[header_num],header.members.single.metaint);					
 				}
@@ -263,8 +286,9 @@ ICACHE_FLASH_ATTR uint16_t clientProcessMetadata(char* s, uint16_t size)
 ICACHE_FLASH_ATTR void clientSetURL(char* url)
 {
 	int l = strlen(url)+1;
-	if(clientURL != NULL) free(clientURL);
-	clientURL = (char*) malloc(l*sizeof(char));
+	if ((clientURL != NULL)&&((strlen(clientURL)+1) < l*sizeof(char))) {free(clientURL);clientURL = NULL;} //avoid fragmentation
+//	if (clientURL != NULL) {free(clientURL);clientURL = NULL;}
+	if (clientURL == NULL) clientURL = (char*) malloc(l*sizeof(char));
 	if(clientURL != NULL) strcpy(clientURL, url);
 	printf("\n##CLI.URLSET#:%s\n",clientURL);
 }
@@ -272,8 +296,9 @@ ICACHE_FLASH_ATTR void clientSetURL(char* url)
 ICACHE_FLASH_ATTR void clientSetPath(char* path)
 {
 	int l = strlen(path)+1;
-	if(clientPath != NULL) free(clientPath);
-	clientPath = (char*) malloc(l*sizeof(char));
+	if ((clientPath != NULL)&&((strlen(clientPath)+1) < l*sizeof(char))){free(clientPath); clientPath = NULL;} //avoid fragmentation
+//	if(clientPath != NULL) free(clientPath);
+	if (clientPath == NULL) clientPath = (char*) malloc(l*sizeof(char));
 	if(clientPath != NULL) strcpy(clientPath, path);
 	printf("\n##CLI.PATHSET#:%s\n",clientPath);
 }
@@ -281,7 +306,7 @@ ICACHE_FLASH_ATTR void clientSetPath(char* path)
 ICACHE_FLASH_ATTR void clientSetPort(uint16_t port)
 {
 	clientPort = port;
-	printf("\n##CLI.PORTSET#\n");
+	printf("##CLI.PORTSET#:%d\n",port);
 }
 
 ICACHE_FLASH_ATTR void clientConnect()
@@ -294,7 +319,7 @@ ICACHE_FLASH_ATTR void clientConnect()
 	if(server) free(server);
 	if((server = (struct hostent*)gethostbyname(clientURL))) {
 		xSemaphoreGive(sConnect);
-		printf(" hostbyname %s\n",server);
+
 		//connect = 1; // todo: semafor!!!
 	} else {
 		clientDisconnect();
@@ -341,6 +366,7 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 		if (t1 != NULL) { // moved to a new address
 			if( strcmp(t1,"Found")||strcmp(t1,"Temporarily")||strcmp(t1,"Moved"))
 			{
+				printf("Header: Moved\n");
 				clientDisconnect();
 				clientParsePlaylist(pdata);
 				cstatus = C_PLAYLIST;
@@ -415,6 +441,7 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 
 			sockfd = socket(AF_INET, SOCK_STREAM, 0);
 			if(sockfd >= 0) printf("Socket created\n");
+			else printf("Socket creation failed\n");
 			bzero(&dest, sizeof(dest));
 			dest.sin_family = AF_INET;
 			dest.sin_port = htons(clientPort);
@@ -439,6 +466,7 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 
 				do
 				{
+//					vTaskDelay(2);
 					bzero(buffer, sizeof(buffer));
 					bytes_read = recv(sockfd, buffer, sizeof(buffer), 0);
 //					printf ("Client: received %d bytes\n", bytes_read);
