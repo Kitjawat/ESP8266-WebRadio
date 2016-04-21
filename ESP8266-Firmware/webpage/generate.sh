@@ -1,7 +1,7 @@
 #!/bin/bash
 yui-compressor  style.css > style.min.css
 mv style.css style.ori
-mv style.min.css style.css
+cp style.min.css style.css
 xxd -i style.css > style
 sed -i 's/\[\]/\[\] ICACHE_STORE_ATTR ICACHE_RODATA_ATTR /g' style
 mv style.ori style.css
@@ -16,7 +16,7 @@ mv style.ori style.css
 
 yui-compressor  script.js >script.min.js
 mv script.js script.ori
-mv script.min.js script.js
+cp script.min.js script.js
 xxd -i script.js > script
 sed -i 's/\[\]/\[\] ICACHE_STORE_ATTR ICACHE_RODATA_ATTR /g' script
 mv script.ori script.js
@@ -25,14 +25,14 @@ mv script.ori script.js
 #python3 ./css-html-js-minify.py script.js
 #mv script.js script.ori
 #mv script.min.js script.js
-xxd -i script.js > script
-sed -i 's/\[\]/\[\] ICACHE_STORE_ATTR ICACHE_RODATA_ATTR /g' script
+#xxd -i script.js > script
+#sed -i 's/\[\]/\[\] ICACHE_STORE_ATTR ICACHE_RODATA_ATTR /g' script
 #mv script.ori script.js
 
 mv index.html index.htm
 python3 ./css-html-js-minify.py index.htm
 xxd -i index.html > index
 sed -i 's/\[\]/\[\] ICACHE_STORE_ATTR ICACHE_RODATA_ATTR /g' index
-rm index.html
-#mv index.html index.min.html
+#rm index.html
+mv index.html index.min.html
 mv index.htm index.html

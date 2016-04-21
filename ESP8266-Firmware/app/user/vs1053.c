@@ -335,6 +335,23 @@ ICACHE_FLASH_ATTR uint8_t	VS1053_GetBassFreq(){
 	return ( (VS1053_ReadRegister(SPI_BASS) & 0x000F) );
 }
 
+ICACHE_FLASH_ATTR uint8_t	VS1053_GetSpatial(){
+	uint16_t spatial = (VS1053_ReadRegister(SPI_MODE) & 0x0090) >>4;
+//	printf("GetSpatial: %d\n",(spatial&1) | ((spatial>>2) & 2));
+	return ((spatial&1) | ((spatial>>2) & 2));
+}
+
+ICACHE_FLASH_ATTR void VS1053_SetSpatial(uint8_t num){
+	uint16_t spatial = VS1053_ReadRegister(SPI_MODE);
+	if (num >=0 && num <= 3)
+	{	
+		num = (((num <<2)&8) | (num&1))<<4;
+//		printf("SetSpatial num: %x\n",num);
+//		printf("SetSpatial Mode: 0x%x, after: 0x%02x%02x\n",spatial, MaskAndShiftRight(spatial,0xFF00,8), (spatial & 0x006F) | num );
+		VS1053_WriteRegister(SPI_MODE, MaskAndShiftRight(spatial,0xFF00,8), (spatial & 0x006F) | num );
+	}	
+}
+
 ICACHE_FLASH_ATTR uint16_t VS1053_GetDecodeTime(){
 	return VS1053_ReadRegister(SPI_DECODE_TIME);
 }

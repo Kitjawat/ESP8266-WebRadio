@@ -1,7 +1,6 @@
 #include "c_types.h"
 
-#define ICY_HEADERS_COUNT 8
-
+#define ICY_HEADERS_COUNT 9
 struct icyHeader
 {
 	union

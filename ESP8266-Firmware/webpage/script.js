@@ -27,6 +27,18 @@ function onRangeChangeFreqBass($range, $spanid, $mul, $rotate) {
 	document.getElementById($spanid).innerHTML = "Under "+(val * $mul) + " Hz";
 	saveSoundSettings();
 }
+function onRangeChangeSpatial($range, $spanid) {
+	var val = document.getElementById($range).value;
+	var label;
+	switch (val){
+		case '0': label="Off";break;
+		case '1': label="Minimal";break;
+		case '2': label="Normal";break;
+		case '3': label="Maximal";break;		
+	}
+	document.getElementById($spanid).innerHTML = label;
+	saveSoundSettings();
+}
 function onRangeVolChange($value) {
 
 	var val = document.getElementById('vol_range').max - $value;
@@ -44,6 +56,8 @@ function instantPlay() {
 	xhr.open("POST","instant_play",false);
 	xhr.setRequestHeader(content,ctype);
 	xhr.setRequestHeader(cache, priv);
+	if (!(document.getElementById('instant_path').value.substring(0, 1) === "/")) document.getElementById('instant_path').value = "/" + document.getElementById('instant_path').value;
+	document.getElementById('instant_url').value = document.getElementById('instant_url').value.replace(/^https?:\/\//,'');
 	xhr.send("url=" + document.getElementById('instant_url').value + "&port=" + document.getElementById('instant_port').value + "&path=" + document.getElementById('instant_path').value+"&");
 	window.location.replace("/");
 }
@@ -66,7 +80,7 @@ function stopStation() {
 	xhr.setRequestHeader(content,ctype);
 	xhr.setRequestHeader(cache, priv);
 	xhr.send("id=" + select.options[select.options.selectedIndex].id+"&");
-//	window.location.replace("/");
+	window.location.replace("/");
 }
 function saveSoundSettings() {
 	xhr = new XMLHttpRequest();
@@ -78,6 +92,7 @@ function saveSoundSettings() {
 			 +"&treble=" + document.getElementById('treble_range').value
 	         + "&bassfreq=" + document.getElementById('bassfreq_range').value 
 			 + "&treblefreq=" + document.getElementById('treblefreq_range').value
+			 + "&spacial=" + document.getElementById('spacial_range').value
 			 + "&");
 }
 function saveStation() {
@@ -90,34 +105,33 @@ function saveStation() {
 	xhr.setRequestHeader(content,ctype);
 	xhr.setRequestHeader(cache, priv);
 	xhr.send("id=" + document.getElementById('add_slot').value + "&url=" + url + "&name=" + document.getElementById('add_name').value + "&file=" + file + "&port=" + document.getElementById('add_port').value+"&");
-	window.location.replace("/");
+	sessionStorage.setItem(document.getElementById('add_slot').value,"{\"Name\":\""+document.getElementById('add_name').value+"\",\"URL\":\""+url+"\",\"File\":\""+file+"\",\"Port\":\""+document.getElementById('add_port').value+"\"}");
+//	sessionStorage.clear();
+//	window.location.replace("/");
+	window.location.reload(false);
 }
 function editStation(id) {
-	document.getElementById('add_slot').value = id;
-	idstr = id.toString();			
-	if (sessionStorage.getItem(idstr) != null)
-	{	
-		var arr = JSON.parse(sessionStorage.getItem(idstr));
+	function cpedit() {
 			document.getElementById('add_url').value = arr["URL"];
 			document.getElementById('add_name').value = arr["Name"];
 			document.getElementById('add_path').value = arr["File"];
 			document.getElementById('add_port').value = arr["Port"];
 			document.getElementById('editStationDiv').style.display = "block";
 			setMainHeight("tab-content2");
-			sessionStorage.setItem(idstr,sessionStorage.getItem(idstr));
+	}
+	document.getElementById('add_slot').value = id;
+	idstr = id.toString();			
+	if (sessionStorage.getItem(idstr) != null)
+	{	
+		var arr = JSON.parse(sessionStorage.getItem(idstr));
+		cpedit();
 	}
 	else {
 	xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4 && xhr.status == 200) {
 			var arr = JSON.parse(xhr.responseText);
-			document.getElementById('add_url').value = arr["URL"];
-			document.getElementById('add_name').value = arr["Name"];
-			document.getElementById('add_path').value = arr["File"];
-			document.getElementById('add_port').value = arr["Port"];
-			document.getElementById('editStationDiv').style.display = "block";
-			setMainHeight("tab-content2");
-			sessionStorage.setItem(idstr,xhr.responseText);
+			cpedit();
 		}
 	}
 	xhr.open("POST","getStation",false);
@@ -127,7 +141,11 @@ function editStation(id) {
 	}
 //	sessionStorage.clear();
 }
-function cploadStations(id,arr,new_tbody) {
+
+function loadStations(page) {
+	var new_tbody = document.createElement('tbody');
+	var id = 16 * (page-1);
+	function cploadStations(id,arr) {
 					var tr = document.createElement('TR');
 					var td = document.createElement('TD');
 					td.appendChild(document.createTextNode(id + 1));
@@ -144,15 +162,12 @@ function cploadStations(id,arr,new_tbody) {
 					tr.appendChild(td);
 					new_tbody.appendChild(tr);
 }	
-function loadStations(page) {
-	var new_tbody = document.createElement('tbody');
-	var id = 16 * (page-1);
 	for(id; id < 16*page; id++) {
 		idstr = id.toString();		
 		if (sessionStorage.getItem(idstr) != null)
 		{	
 			var arr = JSON.parse(sessionStorage.getItem(idstr));
-			cploadStations(id,arr,new_tbody);
+			cploadStations(id,arr);
 		}
 		else
 		{
@@ -161,7 +176,7 @@ function loadStations(page) {
 				if (xhr.readyState == 4 && xhr.status == 200) {
 					var arr = JSON.parse(xhr.responseText);
 					sessionStorage.setItem(idstr,xhr.responseText);
-					cploadStations(id,arr,new_tbody);
+					cploadStations(id,arr);
 				}
 			}
 			xhr.open("POST","getStation",false);
@@ -174,7 +189,11 @@ function loadStations(page) {
 	old_tbody.parentNode.replaceChild(new_tbody, old_tbody);
 	setMainHeight("tab-content2");
 }
-function cploadStationsList(id,arr,foundNull) {
+
+function loadStationsList(max) {
+	var foundNull = false;
+	function cploadStationsList(id,arr) {
+		var foundNull = false;
 			if(arr["Name"].length > 0) 
 			{
 				var opt = document.createElement('option');
@@ -182,9 +201,8 @@ function cploadStationsList(id,arr,foundNull) {
 				opt.id = id;
 				document.getElementById("stationsSelect").appendChild(opt);
 			} else foundNull = true;
-}	
-function loadStationsList(max) {
-	var foundNull = false;
+			return foundNull;
+	}		
 	document.getElementById("stationsSelect").disabled = true;
 	for(var id=0; id<max; id++) {
 		if (foundNull) break;
@@ -192,7 +210,7 @@ function loadStationsList(max) {
 		if (sessionStorage.getItem(idstr) != null)
 		{	
 			var arr = JSON.parse(sessionStorage.getItem(idstr));
-			cploadStationsList(id,arr,foundNull);
+			foundNull = cploadStationsList(id,arr);
 		}
 		else
 		{
@@ -201,7 +219,7 @@ function loadStationsList(max) {
 				if (xhr.readyState == 4 && xhr.status == 200) {
 					var arr = JSON.parse(xhr.responseText);
 					sessionStorage.setItem(idstr,xhr.responseText);
-					cploadStationsList(id,arr,foundNull);
+					foundNull = cploadStationsList(id,arr);
 				}
 			}
 			xhr.open("POST","getStation",false);
@@ -254,6 +272,7 @@ document.addEventListener("DOMContentLoaded", function() {
 	onRangeChange('bass_range', 'bass_span', 1, false);
 	onRangeChangeFreqTreble('treblefreq_range', 'treblefreq_span', 1, false);
 	onRangeChangeFreqBass('bassfreq_range', 'bassfreq_span', 10, false);
+	onRangeChangeSpatial('spacial_range', 'spacial_span');
 	onRangeChange('vol_range', 'vol1_span', -0.5, true);
 	onRangeChange('vol_range', 'vol_span', -0.5, true);
 	loadStationsList(192);
