@@ -50,6 +50,7 @@
 #define SM_JUMP         	0x02
 #define SM_LAYER12			0x02
 #define SM_RESET        	0x04
+#define SM_CANCEL           0x08
 #define SM_OUTOFWAV     	0x08
 #define SM_PDOWN        	0x10
 #define SM_TESTS        	0x20
@@ -62,7 +63,7 @@
 #define SM_ADPCM        	0x1000
 #define SM_ADPCM_HP     	0x2000
 #define SM_LINE1            0x4000
-
+#define para_endFillByte    0x1E06
 //public functions
 void 	VS1053_HW_init();
 void 	VS1053_SineTest();
@@ -73,6 +74,7 @@ void 	VS1053_SoftwareReset();
 uint16_t	VS1053_GetBitrate();
 uint16_t	VS1053_GetSampleRate();
 uint16_t	VS1053_GetDecodeTime();
+void	VS1053_flush_cancel(bool mode);// true = send cancel and wait , false = fill endFillByte stream
 
 //Volume control
 uint8_t 	VS1053_GetVolume();
@@ -80,7 +82,7 @@ void	VS1053_SetVolume(uint8_t xMinusHalfdB);
 void 	VS1053_VolumeUp(uint8_t xHalfdB);
 void	VS1053_VolumeDown(uint8_t xHalfdB);
 //Treble control
-uint8_t	VS1053_GetTreble();
+int8_t	VS1053_GetTreble();
 void	VS1053_SetTreble(int8_t xOneAndHalfdB);
 void	VS1053_TrebleUp(uint8_t xOneAndHalfdB);
 void	VS1053_TrebleDown(uint8_t xOneAndHalfdB);

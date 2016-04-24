@@ -1,5 +1,5 @@
 #!/bin/bash
-yui-compressor  style.css > style.min.css
+yui-compressor --preserve-semi --nomunge -v -o style.min.css style.css 
 mv style.css style.ori
 cp style.min.css style.css
 xxd -i style.css > style
@@ -14,7 +14,7 @@ mv style.ori style.css
 #sed -i 's/\[\]/\[\] ICACHE_STORE_ATTR ICACHE_RODATA_ATTR /g' style
 #mv style.ori style.css
 
-yui-compressor  script.js >script.min.js
+yui-compressor  -o script.min.js script.js 
 mv script.js script.ori
 cp script.min.js script.js
 xxd -i script.js > script

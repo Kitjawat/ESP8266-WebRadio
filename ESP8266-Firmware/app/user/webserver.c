@@ -65,8 +65,8 @@ ICACHE_FLASH_ATTR char* str_replace ( char *string, const char *substr, const ch
 		vTaskDelay(10);
  	    printf("strreplace malloc fails for %d\n",strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) + 1 );
  		}
-		while (i<10);
-		if (i >=10) { /*free(string);*/ return oldstr;}
+		while (i<2);
+		if (i >=2) { /*free(string);*/ return oldstr;}
       } 
 	}
     memcpy ( newstr, oldstr, tok - oldstr );
@@ -86,18 +86,17 @@ ICACHE_FLASH_ATTR char* serverParseCGI(char* html, int length)
   char* h = html;
   char buf[15];
 
-  h = str_replace(h, "#ICY-NAME#", header->members.single.name, length);
-  h = str_replace(h, "#ICY-DESCRIPTION#", header->members.single.description, strlen(h)); 
-  h = str_replace(h, "#ICY-NOTICE1#", header->members.single.notice1, strlen(h));
-  taskYIELD();
-  if ((header->members.single.notice2 ==NULL)|| strlen(header->members.single.notice2) == 0)
+//  h = str_replace(h, "#ICY-NAME#", header->members.single.name, length);
+//  h = str_replace(h, "#ICY-DESCRIPTION#", header->members.single.description, strlen(h)); 
+/*  h = str_replace(h, "#ICY-NOTICE1#", header->members.single.notice1, strlen(h));
+    if ((header->members.single.notice2 ==NULL)|| strlen(header->members.single.notice2) == 0)
     h = str_replace(h, "#ICY-NOTICE2#", header->members.single.audioinfo, strlen(h));
   else
     h = str_replace(h, "#ICY-NOTICE2#", header->members.single.notice2, strlen(h));
-  h = str_replace(h, "#ICY-GENRE#", header->members.single.genre, strlen(h));
-  h = str_replace(h, "#ICY-URL#", header->members.single.url, strlen(h));
-  h = str_replace(h, "#ICY-BITRATE#", header->members.single.bitrate, strlen(h));
-  taskYIELD();
+*/
+//  h = str_replace(h, "#ICY-GENRE#", header->members.single.genre, strlen(h));
+//  h = str_replace(h, "#ICY-URL#", header->members.single.url, strlen(h));
+//  h = str_replace(h, "#ICY-BITRATE#", header->members.single.bitrate, strlen(h));
   
   sprintf(buf, "%d", 254-VS1053_GetVolume());
   h = str_replace(h, "#SOUND-VOL#", buf, strlen(h));
@@ -135,7 +134,7 @@ ICACHE_FLASH_ATTR void serveFile(char* name, int conn)
 	char *content;
 
 	struct servFile* f = findFile(name);
-	printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
+//	printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
 
 	if(f != NULL)
 	{
@@ -160,8 +159,8 @@ ICACHE_FLASH_ATTR void serveFile(char* name, int conn)
 				vTaskDelay(10);
 				printf("servfile malloc fails for %d\n",length*sizeof(char) );
 				}
-				while (i<10);
-				if (i >=10) {
+				while (i<2);
+				if (i >=2) {
 					sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n", (f!=NULL ? f->type : "text/plain"), 0);
 					write(conn, buf, strlen(buf));
 					return ;
@@ -204,6 +203,10 @@ ICACHE_FLASH_ATTR char* getParameterFromResponse(char* param, char* data, uint16
 		}
 	} else return NULL;
 }
+
+
+
+
 ICACHE_FLASH_ATTR void respOk(int conn)
 {
 		char resp[] = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 2\r\n\r\nOK";
@@ -211,6 +214,7 @@ ICACHE_FLASH_ATTR void respOk(int conn)
 }
 ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int conn) {
 //	printf("HandlePost %s\n",name);
+	char* head = NULL;
 	if(strcmp(name, "/instant_play") == 0) {
 		if(data_size > 0) {
 			char* url = getParameterFromResponse("url=", data, data_size);
@@ -374,14 +378,53 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			}
 //			while(clientIsConnected()) vTaskDelay(5);
 		}
-	}
+	} else if(strcmp(name, "/icy") == 0)	
+	{	
+		struct icyHeader *header = clientGetHeader();
+//		printf("icy start header %x\n",header);
+		char* not2;
+		not2 = (header->members.single.notice2 ==NULL)?header->members.single.audioinfo:NULL;
+		int json_length = 73;
+//		printf("evaluation %d\n",((header->members.single.description ==NULL)?strlen(""):strlen(header->members.single.description))
+//		+((header->members.single.name ==NULL)?strlen(""):strlen(header->members.single.name)));
+		json_length +=
+		((header->members.single.description ==NULL)?0:strlen(header->members.single.description)) +
+		((header->members.single.name ==NULL)?0:strlen(header->members.single.name)) +
+		((header->members.single.bitrate ==NULL)?0:strlen(header->members.single.bitrate)) +
+		((header->members.single.url ==NULL)?0:strlen(header->members.single.url))+ 
+		((header->members.single.notice1 ==NULL)?0:strlen(header->members.single.notice1))+
+		((not2 ==NULL)?0:strlen(not2))+
+		((header->members.single.genre ==NULL)?0:strlen(header->members.single.genre));
+		
+//		printf("icy json: %d pas 0 mais 73 min\n",json_length);
+		char *buf = malloc( json_length + 75);;
+		if (buf == NULL)
+		{	
+			printf("getStation malloc fails\n");
+			respOk(conn);
+		}
+		else {				
+			sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %d\r\n\r\n{\"descr\":\"%s\",\"name\":\"%s\",\"bitr\":\"%s\",\"url1\":\"%s\",\"not1\":\"%s\",\"not2\":\"%s\",\"genre\":\"%s\"}",json_length,
+			(header->members.single.description ==NULL)?"":header->members.single.description,
+			(header->members.single.name ==NULL)?"":header->members.single.name,
+			(header->members.single.bitrate ==NULL)?"":header->members.single.bitrate,
+			(header->members.single.url ==NULL)?"":header->members.single.url,
+			(header->members.single.notice1 ==NULL)?"":header->members.single.notice1,
+			(not2 ==NULL)?"":not2 ,
+			(header->members.single.genre ==NULL)?"":header->members.single.genre);
+//			printf("buf: %s\n",buf);
+			write(conn, buf, strlen(buf));
+			free(buf);
+		}
+		return;
+
+		}	
 	respOk(conn);
 }
 
 ICACHE_FLASH_ATTR void httpServerHandleConnection(int conn, char* buf, uint16_t buflen) {
 	char *c;
 //	printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
-
 	if( (c = strstr(buf, "GET ")) != NULL)
 	{
 		char fname[32];
@@ -400,6 +443,7 @@ ICACHE_FLASH_ATTR void httpServerHandleConnection(int conn, char* buf, uint16_t 
 		for(i=0; i<32; i++) fname[i] = 0;
 		c += 5;
 		char* c_end = strstr(c, " ");
+//		if(c_end == NULL) c_end = strstr(buf, "\r\n\r\n");
 		if(c_end == NULL) return;
 		uint8_t len = c_end-c;
 		if(len > 32) return;
@@ -419,31 +463,49 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 	struct sockaddr_in server_addr, client_addr;
 	int server_sock, client_sock;
 	socklen_t sin_size;
+	struct timeval timeout;      
+    timeout.tv_sec = 30;
+    timeout.tv_usec = 0;
+
+
 	
 	while (1) {
-        bzero(&server_addr, sizeof(struct sockaddr_in));
+ /*       bzero(&server_addr, sizeof(struct sockaddr_in));
         server_addr.sin_family = AF_INET;
         server_addr.sin_addr.s_addr = INADDR_ANY;
         server_addr.sin_port = htons(80);
-		
+*/		
         int recbytes;
 
         do {
+			bzero(&server_addr, sizeof(struct sockaddr_in));
+			server_addr.sin_family = AF_INET;
+			server_addr.sin_addr.s_addr = INADDR_ANY;
+			server_addr.sin_port = htons(80);
+					
             if (-1 == (server_sock = socket(AF_INET, SOCK_STREAM, 0))) {
 				printf ("Socket fails %d\n", errno);
+				close(client_sock);
+				vTaskDelay(10);	
 //				user_init(); // restart
                 break;
             }
+//			if (setsockopt (server_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
+//					printf("setsockopt failed\n");
 
             if (-1 == bind(server_sock, (struct sockaddr *)(&server_addr), sizeof(struct sockaddr))) {
 				printf ("Bind fails %d\n", errno);
 				close(client_sock);
+				close(server_sock);
+				vTaskDelay(100);	
                 break;
             }
 
             if (-1 == listen(server_sock, 5)) {
 				printf ("Listen fails %d\n",errno);
 				close(client_sock);
+				close(server_sock);
+				vTaskDelay(100);	
                 break;
             }
 
@@ -452,12 +514,14 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
             while(1) {
                 if ((client_sock = accept(server_sock, (struct sockaddr *) &client_addr, &sin_size)) < 0) {
 					printf ("Accept fails %d\n",errno);
+					vTaskDelay(10);
 					close(client_sock);
-                    break;;
+					close(server_sock);
+					vTaskDelay(100);					
+					break;
                 }
                 char *buf = (char *)zalloc(1024);
 				if (buf == NULL) {printf("server zalloc fails\n");	break;}
-
                 while ((recbytes = read(client_sock , buf, 1023)) > 0) { // For now we assume max. 1023 bytes for request
 //					printf ("Server: received %d bytes, %s\n", recbytes, buf);
 					char* bend = strstr(buf, "\r\n\r\n");
@@ -478,6 +542,8 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
                 if (recbytes < 0) {
 					printf ("Socket read fails %d\n", errno);
                     close(client_sock);
+					close(server_sock);
+					vTaskDelay(10);	
 					break;
                 }
             }

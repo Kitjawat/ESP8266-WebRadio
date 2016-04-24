@@ -1,0 +1,11 @@
+<NotepadPlus>
+    <Session activeView="1">
+        <mainView activeIndex="0" />
+        <subView activeIndex="2">
+            <File firstVisibleLine="13" xOffset="0" scrollWidth="2328" startPos="821" endPos="821" selMode="0" lang="HTML" encoding="-1" filename="\\Master_seven\c\wamp3\www\webpage\index.html" backupFilePath="" originalFileLastModifTimestamp="1461426638" />
+            <File firstVisibleLine="20" xOffset="0" scrollWidth="2328" startPos="1217" endPos="1217" selMode="0" lang="JavaScript" encoding="-1" filename="\\Master_seven\c\wamp3\www\webpage\script.js" backupFilePath="" originalFileLastModifTimestamp="1461442166" />
+            <File firstVisibleLine="374" xOffset="0" scrollWidth="2328" startPos="12141" endPos="12141" selMode="0" lang="C" encoding="-1" filename="C:\Users\jp\Documents\GitHub\ESP8266-WebRadio\ESP8266-Firmware\app\user\webserver.c" backupFilePath="" originalFileLastModifTimestamp="1461442613" />
+            <File firstVisibleLine="166" xOffset="0" scrollWidth="2328" startPos="8039" endPos="8039" selMode="0" lang="C++" encoding="-1" filename="C:\Users\jp\Documents\GitHub\ESP8266-WebRadio\ESP8266-Firmware\include\lwip\lwip\arch.h" backupFilePath="" originalFileLastModifTimestamp="1460750136" />
+        </subView>
+    </Session>
+</NotepadPlus>

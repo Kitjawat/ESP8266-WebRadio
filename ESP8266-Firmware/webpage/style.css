@@ -4,7 +4,7 @@ html, body
 	padding: 0;
 	font: 12px "Trebuchet MS";
 	color: #222;
-	background-color: #03396C;
+	background-color: #033069;
 }
 
 #MAIN
@@ -39,39 +39,39 @@ html, body
 
 #CONTENT
 {
-	width: 80%;
-/*	overflow: hidden;*/
+	width: 85%;
+	overflow: auto;
 	min-height: calc(100% - 70px);
 	margin-left: auto;
 	margin-right: auto;
-	padding-left: 20px;
-	padding-right: 20px;
+	padding-left: 10px;
+	padding-right: 10px;
 	padding-top: 30px;
-	background-color: #F0F0F0;
+	background-color: #F8F8F8;
 	box-shadow: 10px 5px 10px 0px #333, -10px 6px 10px 0px #333;
 }
 
 #CONTENT h1
 {
-	font: 22px "Trebuchet MS";
-	color: #F0F0F0;
+	font: 18px "Trebuchet MS";
+	color: #F8F8F8;
 	background-color: #3399CC;
-	padding: 2px;
-	display: inline-block;
+	padding: 4px 6px;
+	width:95%;
 }
 
 #CONTENT p
 {
-	font-size: 16px;
+	font-size: 15px;
 	margin-left: 10px;
-	margin-top: 0px;
-	margin-bottom: 5px;
-	line-height: 1.5;
+	margin-top: 2px;
+	margin-bottom: 1px;
+	line-height: 1,6;
 }
 
 #CONTENT a, a:visited
 {
-	font-size: 16px;
+	font-size: 15px;
 	color: #222;
 	text-decoration: none;
 }
@@ -88,13 +88,19 @@ html, body
 }
 #CONTENT form
 {
-	font: 16px "Trebuchet MS";
+	font: 15px "Trebuchet MS";
 }
 
 .tabs span.bold
 {
 	font-weight: 900;
-	width:150px;
+	width:140px;
+	display:inline-block;
+}
+.tabs span.bold1
+{
+	font-weight: 900;
+	width:100px;
 	display:inline-block;
 }
 .tabs {
@@ -107,41 +113,47 @@ html, body
 
 .tabs li {
   float: left;
-  display: block;
+ // display: block;
+  
 }
 .tabs input[type="radio"] {
   position: absolute;
   top: -9999px;
   left: -9999px;
+//  overflow:auto;
 }
 
 .tabs input[type=range]
+{
+  font-weight:bold;
+  background-color:C1DFFF; 
+}
+.tabs input[type=text]
 {
   font-weight:bold;
   background-color:C1DFFF;
   
 }
 .tabs input[type="button"] {
-  font-size: 14px;
+  font-size: 15px;
   font-weight:bold;
   height: 40px;
   background-color:C1DFFF;
 }
-.tabs input[type="select"]
+.tabs select
 {
   font-weight:bold;
   background-color:#C1DFFF;	
-    margin: 50px;
   border: 1px solid #111;
   border: 1px solid #ccc;
-  height: 40px;
+  height: 25px;
 }
 
 .tabs label {
-  display: block;
-  padding: 14px 14px;
-  border-radius: 2px 2px 0 0;
-  font-size: 14px;
+  display: run-in;
+  padding: 10px 14px;*/
+/*  border-radius: 2px 2px 0 0;*/
+  font-size: 15px;
   font-weight: normal;
   text-transform: uppercase;
   background: #3399CC;
@@ -159,27 +171,26 @@ html, body
 .tabs .tab-content {
   z-index: 2;
   display: none;
-  overflow: hidden;
+  overflow: auto;
   width: 100%;
-  font-size: 17px;
+  font-size: 15px;
   line-height: 25px;
   position: absolute;
   top: 53px;
   left: 0;
-  background: #F0F0F0;
+  background: #F8F8F8;
   border-color: #185213;
   border-top: solid 1px;
 }
 .tabs [id^="tab"]:checked + label {
   top: 0;
-  padding:  21px;
-  padding-top: 17px;
-  font-size: 20px;
+  padding:  14px 14px;
+  font-size: 18px;
   color: #EEE;
   background: #3388CC;
 }
 .tabs [id^="tab"]:checked ~ [id^="tab-content"] {
-  display: block;
+ display: block;
 }
 
 table#stationsTable, table#stationsTable th, table#stationsTable td {

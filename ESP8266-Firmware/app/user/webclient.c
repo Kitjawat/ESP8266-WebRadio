@@ -85,6 +85,7 @@ ICACHE_FLASH_ATTR uint16_t bufferRead(uint8_t *data, uint16_t size) {
 }
 
 ICACHE_FLASH_ATTR void bufferReset() {
+	playing = 0;	
 	wptr = 0;
 	rptr = 0;
 	bempty = 1;
@@ -162,14 +163,36 @@ ICACHE_FLASH_ATTR bool clientParsePlaylist(char* s)
    return false;
   }
 }
-
+ICACHE_FLASH_ATTR char* stringify(char* str,int *len)
+{
+		char* new = malloc(strlen(str)+100);
+//		printf("stringify: enter: len:%d\n",*len);
+		int i=0 ,j =0;
+		for (i = 0;i< strlen(str)+100;i++) new[i] = 0;
+		for (i=0;i< strlen(str);i++)
+		{
+			if ((str)[i] == '"') new[j++] = '\\';
+			new[j++] =(str)[i] ;
+		}
+//		printf("stringify: output: len:%d\n",*len);
+		if (*len == j+1)
+		{
+			free(new);
+			return str;
+		} else
+		{
+			free(str);
+			*len = j+1;
+			return new;
+		}		
+}	
 ICACHE_FLASH_ATTR void clientParseHeader(char* s)
 {
 	// icy-notice1 icy-notice2 icy-name icy-genre icy-url icy-br
 	uint8_t header_num;
 //	printf("ParseHeader: %s\n",s);
 	xSemaphoreTake(sHeader,portMAX_DELAY);
-	if (cstatus != C_HEADER1) // not ended. dont clear
+//	if (cstatus != C_HEADER1) // not ended. dont clear
 	{
 		for(header_num=0; header_num<ICY_HEADERS_COUNT; header_num++) {
 			if(header_num != METAINT) if(header.members.mArr[header_num] != NULL) {
@@ -207,8 +230,10 @@ ICACHE_FLASH_ATTR void clientParseHeader(char* s)
 						int i;
 						for(i = 0; i<len+1; i++) header.members.mArr[header_num][i] = 0;
 						strncpy(header.members.mArr[header_num], t, len);
+//						printf("header before addr:0x%x  cont:%s\n",header.members.mArr[header_num],header.members.mArr[header_num]);
+						header.members.mArr[header_num] = stringify(header.members.mArr[header_num],&headerlen[header_num]);
+//						printf("header after  addr:0x%x  cont:%s\n",header.members.mArr[header_num],header.members.mArr[header_num]);
 					}
-//			printf("icy: %s: %s\n",icyHeaders[header_num],header.members.mArr[header_num]);					
 				}
 				else // Numerical header field
 				{
@@ -293,7 +318,7 @@ ICACHE_FLASH_ATTR void clientSetURL(char* url)
 //	if (clientURL != NULL) {free(clientURL);clientURL = NULL;}
 	if (clientURL == NULL) clientURL = (char*) malloc(l*sizeof(char));
 	if(clientURL != NULL) strcpy(clientURL, url);
-	printf("\n##CLI.URLSET#:%s\n",clientURL);
+	printf("##CLI.URLSET#:%s\n",clientURL);
 }
 
 ICACHE_FLASH_ATTR void clientSetPath(char* path)
@@ -303,7 +328,7 @@ ICACHE_FLASH_ATTR void clientSetPath(char* path)
 //	if(clientPath != NULL) free(clientPath);
 	if (clientPath == NULL) clientPath = (char*) malloc(l*sizeof(char));
 	if(clientPath != NULL) strcpy(clientPath, path);
-	printf("\n##CLI.PATHSET#:%s\n",clientPath);
+	printf("##CLI.PATHSET#:%s\n",clientPath);
 }
 
 ICACHE_FLASH_ATTR void clientSetPort(uint16_t port)
@@ -333,7 +358,7 @@ ICACHE_FLASH_ATTR void clientDisconnect()
 {
 	//connect = 0;
 	xSemaphoreGive(sDisconnect);
-	printf("\n##CLI.STOPPED#\n");
+	printf("##CLI.STOPPED#\n");
 }
 
 ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned short len)
@@ -380,7 +405,10 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 			t1 = strstr(pdata, "\r\n\r\n"); // END OF HEADER
 			if(t1 != NULL) {
 				//processed = t1-pdata + 4;
-				cstatus = C_DATA;
+				cstatus = C_DATA;				
+//				bufferReset();
+				VS1053_flush_cancel(false);
+				VS1053_flush_cancel(true);
 				int newlen = len - (t1-pdata) - 4;
 //				if(newlen > 0) clientReceiveCallback(NULL, t1+4, newlen);
 				if(newlen > 0) bufferWrite(t1+4, newlen);
@@ -425,7 +453,7 @@ ICACHE_FLASH_ATTR void vsTask(void *pvParams) {
 				s += VS1053_SendMusicBytes(b+s, size-s);
 				vTaskDelay(2);
 			}
-		} else vTaskDelay(10);
+		} else vTaskDelay(15);
 	}
 }
 
@@ -442,7 +470,7 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 			xSemaphoreTake(sDisconnect, 0);
 
 			sockfd = socket(AF_INET, SOCK_STREAM, 0);
-			if(sockfd >= 0) printf("WebClient Socket created\n");
+			if(sockfd >= 0) ; //printf("WebClient Socket created\n");
 			else printf("WebClient Socket creation failed\n");
 			bzero(&dest, sizeof(dest));
 			dest.sin_family = AF_INET;
@@ -452,7 +480,7 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 			/*---Connect to server---*/
 			if(connect(sockfd, (struct sockaddr*)&dest, sizeof(dest)) >= 0) 
 			{
-				printf("WebClient Socket connected\n");
+//				printf("WebClient Socket connected\n");
 				bzero(buffer, sizeof(buffer));
 				
 				char *t0 = strstr(clientPath, ".m3u");
@@ -484,10 +512,10 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 			} else printf("WebClient Socket fails to connect %d\n", errno);
 			/*---Clean up---*/
 			if (bytes_read == 0 ) clientDisconnect(); //jpc
-			playing = 0;
 			bufferReset();
+			VS1053_flush_cancel(false);
 			close(sockfd);
-			printf("WebClient Socket closed\n");
+//			printf("WebClient Socket closed\n");
 			if (cstatus == C_PLAYLIST) 			
 			{
 			  clientConnect();

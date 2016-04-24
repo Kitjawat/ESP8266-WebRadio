@@ -1,47 +1,84 @@
 var content = "Content-type";
-var cache = "cache-control"
-var priv = "private";
-//var ctype = "application/text";
 var ctype = "application/x-www-form-urlencoded";
 var cjson = "application/json";
-function reloadAfter($seconds) {
+
+function saveTextAsFile()
+{
+	var output = ''; 
+	for (var key in localStorage) {
+	output = output+(localStorage[key])+'\n';
+	}
+    var textFileAsBlob = new Blob([output], {type:'text/plain'});
+    var downloadLink = document.getElementById('downloadlink');
+	downloadLink.download = document.getElementById('filename').value;
+    if (window.webkitURL != null)
+        downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
+    else if(window.navigator.msSaveOrOpenBlob)
+		downloadLink.addEventListener("click",function(){
+                window.navigator.msSaveBlob(textFileAsBlob, document.getElementById('filename').value);
+            });
+		else		
+			downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+    downloadLink.click();
+}
+
+function refresh() {
+	xhr = new XMLHttpRequest();
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState == 4 && xhr.status == 200) {
+			var arr = JSON.parse(xhr.responseText);
+			document.getElementById('descr').innerHTML = arr["descr"];
+			document.getElementById('name').innerHTML = arr["name"];
+			document.getElementById('bitr').innerHTML = arr["bitr"];
+			document.getElementById('not1').innerHTML = arr["not1"];
+			document.getElementById('not2').innerHTML = arr["not2"];
+			document.getElementById('genre').innerHTML = arr["genre"];
+			document.getElementById('url1').innerHTML = arr["url1"];
+			document.getElementById('url2').href = arr["url1"];
+		}
+	}
+	xhr.open("POST","icy",false);
+	xhr.setRequestHeader(content,ctype);
+	xhr.send("&");
+}
+
+/*function reloadAfter($seconds) {
 	setTimeout(function(){
 	   window.location.replace("/");
 	}, $seconds*1000);
-}
-function onRangeChange($range, $spanid, $mul, $rotate) {
+}*/
+function onRangeChange($range, $spanid, $mul, $rotate, $nosave) {
 	var val = document.getElementById($range).value;
 	if($rotate) val = document.getElementById($range).max - val;
 	document.getElementById($spanid).innerHTML = (val * $mul) + " dB";
-	saveSoundSettings();
+	if( typeof($nosave) == 'undefined' )saveSoundSettings();
 }
-function onRangeChangeFreqTreble($range, $spanid, $mul, $rotate) {
+function onRangeChangeFreqTreble($range, $spanid, $mul, $rotate, $nosave) {
 	var val = document.getElementById($range).value;
 	if($rotate) val = document.getElementById($range).max - val;
 	document.getElementById($spanid).innerHTML = "From "+(val * $mul) + " kHz";
-	saveSoundSettings();
+	if( typeof($nosave) == 'undefined' )saveSoundSettings();
 }
-function onRangeChangeFreqBass($range, $spanid, $mul, $rotate) {
+function onRangeChangeFreqBass($range, $spanid, $mul, $rotate, $nosave) {
 	var val = document.getElementById($range).value;
 	if($rotate) val = document.getElementById($range).max - val;
 	document.getElementById($spanid).innerHTML = "Under "+(val * $mul) + " Hz";
-	saveSoundSettings();
+	if( typeof($nosave) == 'undefined' )saveSoundSettings();
 }
-function onRangeChangeSpatial($range, $spanid) {
+function onRangeChangeSpatial($range, $spanid, $nosave) {
 	var val = document.getElementById($range).value;
 	var label;
 	switch (val){
 		case '0': label="Off";break;
 		case '1': label="Minimal";break;
 		case '2': label="Normal";break;
-		case '3': label="Maximal";break;		
+		case '3': label="Maximal";break;	
 	}
 	document.getElementById($spanid).innerHTML = label;
-	saveSoundSettings();
+	if( typeof($nosave) == 'undefined' )saveSoundSettings();
 }
 function onRangeVolChange($value) {
-
-	var val = document.getElementById('vol_range').max - $value;
+	var val = document.getElementById('vol_range').max -$value;
 	document.getElementById('vol1_span').innerHTML = (val * -0.5) + " dB";
 	document.getElementById('vol_span').innerHTML = (val * -0.5) + " dB";
 	document.getElementById('vol_range').value = $value;
@@ -49,17 +86,17 @@ function onRangeVolChange($value) {
 	xhr = new XMLHttpRequest();
 	xhr.open("POST","soundvol",false);
 	xhr.setRequestHeader(content,ctype);
-	xhr.send(  "vol=" + document.getElementById('vol_range').value+"&");
+	xhr.send(  "vol=" + $value+"&");
 }
+
 function instantPlay() {
 	xhr = new XMLHttpRequest();
 	xhr.open("POST","instant_play",false);
 	xhr.setRequestHeader(content,ctype);
-	xhr.setRequestHeader(cache, priv);
 	if (!(document.getElementById('instant_path').value.substring(0, 1) === "/")) document.getElementById('instant_path').value = "/" + document.getElementById('instant_path').value;
 	document.getElementById('instant_url').value = document.getElementById('instant_url').value.replace(/^https?:\/\//,'');
 	xhr.send("url=" + document.getElementById('instant_url').value + "&port=" + document.getElementById('instant_port').value + "&path=" + document.getElementById('instant_path').value+"&");
-	window.location.replace("/");
+	window.setTimeout(refresh, 1000);
 }
 function playStation() {
 	select = document.getElementById('stationsSelect');
@@ -67,10 +104,10 @@ function playStation() {
 	xhr = new XMLHttpRequest();
 	xhr.open("POST","play",false);
 	xhr.setRequestHeader(content,ctype);
-	xhr.setRequestHeader(cache, priv);
 	xhr.send("id=" + select.options[select.options.selectedIndex].id+"&");
-	window.location.replace("/");
+//	window.location.replace("/");
 //    window.location.reload(false);
+	window.setTimeout(refresh, 1000);
 }
 function stopStation() {
 	var select = document.getElementById('stationsSelect');
@@ -78,15 +115,12 @@ function stopStation() {
 	xhr = new XMLHttpRequest();
 	xhr.open("POST","stop",false);
 	xhr.setRequestHeader(content,ctype);
-	xhr.setRequestHeader(cache, priv);
 	xhr.send("id=" + select.options[select.options.selectedIndex].id+"&");
-	window.location.replace("/");
 }
 function saveSoundSettings() {
 	xhr = new XMLHttpRequest();
 	xhr.open("POST","sound",false);
 	xhr.setRequestHeader(content,ctype);
-	xhr.setRequestHeader(cache, priv);
 	xhr.send(
 	           "&bass=" + document.getElementById('bass_range').value 
 			 +"&treble=" + document.getElementById('treble_range').value
@@ -103,11 +137,9 @@ function saveStation() {
 	xhr = new XMLHttpRequest();
 	xhr.open("POST","setStation",false);
 	xhr.setRequestHeader(content,ctype);
-	xhr.setRequestHeader(cache, priv);
 	xhr.send("id=" + document.getElementById('add_slot').value + "&url=" + url + "&name=" + document.getElementById('add_name').value + "&file=" + file + "&port=" + document.getElementById('add_port').value+"&");
-	sessionStorage.setItem(document.getElementById('add_slot').value,"{\"Name\":\""+document.getElementById('add_name').value+"\",\"URL\":\""+url+"\",\"File\":\""+file+"\",\"Port\":\""+document.getElementById('add_port').value+"\"}");
-//	sessionStorage.clear();
-//	window.location.replace("/");
+	localStorage.setItem(document.getElementById('add_slot').value,"{\"Name\":\""+document.getElementById('add_name').value+"\",\"URL\":\""+url+"\",\"File\":\""+file+"\",\"Port\":\""+document.getElementById('add_port').value+"\"}");
+//	localStorage.clear();
 	window.location.reload(false);
 }
 function editStation(id) {
@@ -121,9 +153,9 @@ function editStation(id) {
 	}
 	document.getElementById('add_slot').value = id;
 	idstr = id.toString();			
-	if (sessionStorage.getItem(idstr) != null)
+	if (localStorage.getItem(idstr) != null)
 	{	
-		var arr = JSON.parse(sessionStorage.getItem(idstr));
+		var arr = JSON.parse(localStorage.getItem(idstr));
 		cpedit();
 	}
 	else {
@@ -136,10 +168,10 @@ function editStation(id) {
 	}
 	xhr.open("POST","getStation",false);
 	xhr.setRequestHeader(content,ctype);
-	xhr.setRequestHeader(cache, priv);
+//	xhr.setRequestHeader(cache, priv);
 	xhr.send("idgp=" + id+"&");
 	}
-//	sessionStorage.clear();
+//	localStorage.clear();
 }
 
 function loadStations(page) {
@@ -164,9 +196,9 @@ function loadStations(page) {
 }	
 	for(id; id < 16*page; id++) {
 		idstr = id.toString();		
-		if (sessionStorage.getItem(idstr) != null)
+		if (localStorage.getItem(idstr) != null)
 		{	
-			var arr = JSON.parse(sessionStorage.getItem(idstr));
+			var arr = JSON.parse(localStorage.getItem(idstr));
 			cploadStations(id,arr);
 		}
 		else
@@ -175,7 +207,7 @@ function loadStations(page) {
 			xhr.onreadystatechange = function() {
 				if (xhr.readyState == 4 && xhr.status == 200) {
 					var arr = JSON.parse(xhr.responseText);
-					sessionStorage.setItem(idstr,xhr.responseText);
+					localStorage.setItem(idstr,xhr.responseText);
 					cploadStations(id,arr);
 				}
 			}
@@ -184,7 +216,6 @@ function loadStations(page) {
 			xhr.send("idgp=" + id+"&");
 		}
 	}
-//	console.log(new_tbody);
 	var old_tbody = document.getElementById("stationsTable").getElementsByTagName('tbody')[0];
 	old_tbody.parentNode.replaceChild(new_tbody, old_tbody);
 	setMainHeight("tab-content2");
@@ -207,9 +238,9 @@ function loadStationsList(max) {
 	for(var id=0; id<max; id++) {
 		if (foundNull) break;
 		idstr = id.toString();
-		if (sessionStorage.getItem(idstr) != null)
+		if (localStorage.getItem(idstr) != null)
 		{	
-			var arr = JSON.parse(sessionStorage.getItem(idstr));
+			var arr = JSON.parse(localStorage.getItem(idstr));
 			foundNull = cploadStationsList(id,arr);
 		}
 		else
@@ -218,7 +249,7 @@ function loadStationsList(max) {
 			xhr.onreadystatechange = function() {			
 				if (xhr.readyState == 4 && xhr.status == 200) {
 					var arr = JSON.parse(xhr.responseText);
-					sessionStorage.setItem(idstr,xhr.responseText);
+					localStorage.setItem(idstr,xhr.responseText);
 					foundNull = cploadStationsList(id,arr);
 				}
 			}
@@ -256,6 +287,8 @@ function setMainHeight(name) {
 	if(h<minh) h = minh;
 	document.getElementById("MAIN").style.height = h;
 }
+
+//document.addEventListener("load", 	refresh(););
 document.addEventListener("DOMContentLoaded", function() {
 	document.getElementById("tab1").addEventListener("click", function() {
 			setMainHeight("tab-content1");
@@ -267,15 +300,15 @@ document.addEventListener("DOMContentLoaded", function() {
 	document.getElementById("tab3").addEventListener("click", function() {
 			setMainHeight("tab-content3");
 		});
-
-	onRangeChange('treble_range', 'treble_span', 1.5, false);
-	onRangeChange('bass_range', 'bass_span', 1, false);
-	onRangeChangeFreqTreble('treblefreq_range', 'treblefreq_span', 1, false);
-	onRangeChangeFreqBass('bassfreq_range', 'bassfreq_span', 10, false);
-	onRangeChangeSpatial('spacial_range', 'spacial_span');
-	onRangeChange('vol_range', 'vol1_span', -0.5, true);
-	onRangeChange('vol_range', 'vol_span', -0.5, true);
+	onRangeChange('treble_range', 'treble_span', 1.5, false,true);
+	onRangeChange('bass_range', 'bass_span', 1, false,true);
+	onRangeChangeFreqTreble('treblefreq_range', 'treblefreq_span', 1, false,true);
+	onRangeChangeFreqBass('bassfreq_range', 'bassfreq_span', 10, false,true);
+	onRangeChangeSpatial('spacial_range', 'spacial_span', true);
+	onRangeVolChange(document.getElementById('vol_range').value);
+	saveSoundSettings();
 	loadStationsList(192);
-	onRangeChange('vol1_range', 'vol1_span', -0.5, true);
+	refresh();
 	setMainHeight("tab-content1");
+	window.setInterval(refresh,60000);
 });

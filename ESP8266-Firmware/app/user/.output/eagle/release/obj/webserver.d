@@ -11,8 +11,8 @@
  /home/jp/esp-open-sdk/xtensa-lx106-elf/lib/gcc/xtensa-lx106-elf/4.8.2/include/stdbool.h \
  /home/jp/esp-open-sdk/xtensa-lx106-elf/lib/gcc/xtensa-lx106-elf/4.8.2/include/stddef.h \
  ../include/../../webpage/index ../include/../../webpage/style \
- ../include/../../webpage/script ../include/webclient.h \
- ../include/vs1053.h ../../include/lwip/lwip/opt.h \
+ ../include/../../webpage/script ../include/../../webpage/logo \
+ ../include/webclient.h ../include/vs1053.h ../../include/lwip/lwip/opt.h \
  ../../include/lwip/lwipopts.h ../../include/lwip/lwip/debug.h \
  ../../include/lwip/lwip/arch.h ../../include/lwip/arch/cc.h \
  /home/jp/esp-open-sdk/xtensa-lx106-elf/xtensa-lx106-elf/include/stdio.h \

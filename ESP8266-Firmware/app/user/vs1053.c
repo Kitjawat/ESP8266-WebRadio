@@ -261,8 +261,10 @@ ICACHE_FLASH_ATTR void VS1053_SetVolume(uint8_t xMinusHalfdB){
  * @return Returned value describes enhancement in multiplies
  * 		of 1.5dB. 0 value means no enhancement, 8 max (12dB).
  */
-ICACHE_FLASH_ATTR uint8_t	VS1053_GetTreble(){
-	return ( (VS1053_ReadRegister(SPI_BASS) & 0xF000) >> 12);
+ICACHE_FLASH_ATTR int8_t	VS1053_GetTreble(){
+	int8_t  treble = (VS1053_ReadRegister(SPI_BASS) & 0xF000) >> 12;
+	if ( (treble&0x08)) treble |= 0xF0; // negative value
+	return ( treble);
 }
 
 /**
@@ -277,8 +279,6 @@ ICACHE_FLASH_ATTR void VS1053_SetTreble(int8_t xOneAndHalfdB){
 	uint16_t bassReg = VS1053_ReadRegister(SPI_BASS);
 	if (( xOneAndHalfdB <= 7) && ( xOneAndHalfdB >=-8))
 		VS1053_WriteRegister( SPI_BASS, MaskAndShiftRight(bassReg,0x0F00,8) | (xOneAndHalfdB << 4), bassReg & 0x00FF );
-//	else
-//		VS1053_WriteRegister( SPI_BASS, MaskAndShiftRight(bassReg,0x0F00,8) | 0x80, bassReg & 0x00FF );
 }
 
 /**
@@ -403,3 +403,32 @@ ICACHE_FLASH_ATTR uint16_t VS1053_GetBitrate(){
 ICACHE_FLASH_ATTR uint16_t VS1053_GetSampleRate(){
 	return (VS1053_ReadRegister(SPI_AUDATA) & 0xFFFE);
 }
+
+ICACHE_FLASH_ATTR void VS1053_flush_cancel(bool mode) {
+//  int8_t endFillByte = (int8_t) (Mp3ReadWRAM(para_endFillByte) & 0xFF);
+	VS1053_WriteRegister(SPI_WRAMADDR,MaskAndShiftRight(para_endFillByte,0xFF00,8), (para_endFillByte & 0x00FF) );
+	int8_t endFillByte = (int8_t) VS1053_ReadRegister(SPI_WRAM) & 0xFF;
+	uint8_t buf[513];
+	int y;
+	for (y = 0; y < 513; y++) buf[y] = endFillByte;
+
+  if (mode) //set CANCEL
+  {
+//Mp3WriteRegister(SCI_MODE, (Mp3ReadRegister(SCI_MODE) | SM_CANCEL));
+  uint16_t spimode = VS1053_ReadRegister(SPI_MODE)| SM_CANCEL;
+  // set CANCEL
+  VS1053_WriteRegister(SPI_MODE,MaskAndShiftRight(spimode,0xFF00,8), (spimode & 0x00FF) );
+  // wait CANCEL
+  while (VS1053_ReadRegister(SPI_MODE)& SM_CANCEL)
+  {	  
+	VS1053_SendMusicBytes( buf, 32);
+     vTaskDelay(5);
+	 printf ("Wait CANCEL clear\n");
+  }	 
+  } else
+  {
+	for ( y = 0; y < 4; y++)	VS1053_SendMusicBytes( buf, 513); // 4*513 = 2052
+  }	  
+}
+
+

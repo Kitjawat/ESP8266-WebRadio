@@ -23,21 +23,20 @@
 				<div id="tab-content1" class="tab-content">
 				
 				 <h1>Now playing</h1>
-					<p><span class="bold">Name: </span>#ICY-NAME#</p>
-					<p><span class="bold">Description: </span>#ICY-DESCRIPTION#</p>
-					<p><span class="bold">Notice: </span>#ICY-NOTICE1# #ICY-NOTICE2#</p>
-					<p><span class="bold">Genre: </span>#ICY-GENRE#</p>
-					<p><span class="bold">URL: </span><a href="#ICY-URL#" target="_blank">#ICY-URL#</a></p>
-					<p><span class="bold">Bitrate: </span>#ICY-BITRATE# kB/s</p>
-					<h1>stations</h1>
+					<p><span class="bold1" >Name: </span><span id="name"></span></p>
+					<p><span class="bold1" >Description: </span><span id="descr"></span></p>
+					<p><span class="bold1" >Notice: </span><span id="not1"></span> <span id="not2"></span></p>
+					<p><span class="bold1" >Genre: </span><span id="genre"></span></p>
+					<p><span class="bold1" >URL: </span><a  target="_blank" id="url2"> <span id="url1"></span></a></p>
+					<p><span class="bold1" >Bitrate: </span><span id="bitr"></span> kB/s</p>
+					<h1>Select stations</h1>
 					<form>
-						<p><span class="bold">Select station:</span><br>
+						<p>
 						<select id="stationsSelect" >
-						</select>
-						<input type="button" value="Play"  onClick="playStation()">
-						<input type="button" value="Stop"  onClick="stopStation()">
-                        </p
-						><p><span class="bold">Volume:</span><br/> 
+						</select></p><br/><p>
+						<input type="button" value="Play"  onClick="playStation()"> &nbsp;
+						<input type="button" value="Stop"  onClick="stopStation()"><br/><br/>
+                        <span class="bold1">Volume:</span><br/> 
 						<input type="range" id="vol1_range" name="vol1"  onChange="onRangeVolChange(this.value)" min=100 max=254 value=#SOUND-VOL#><span id="vol1_span"></span><br>
 						</p>
 					</form>
@@ -99,26 +98,25 @@
 					<label for="tab3">Settings</label>
 					<div id="tab-content3" class="tab-content">
 					<h1>Sound settings</h1>
-					<form>
 						<p>
-						<span class="bold";>Treble control: </span><input type="range" id="treble_range" name="treble"  onChange="onRangeChange('treble_range', 'treble_span', 1.5, false)" min=-8 max=7 value=#SOUND-TREBLE#><span id="treble_span"></span><br>
-						<span class="bold";>Treble frequency: </span><input type="range" id="treblefreq_range" name="treblefreq"  onChange="onRangeChangeFreqTreble('treblefreq_range', 'treblefreq_span', 1, false)" min=1 max=15 value=#SOUND-TREBLE-FREQ#><span id="treblefreq_span"></span><br>
-						<span class="bold";>  Bass enhance: </span><input type="range"  id="bass_range" name="bass"  onChange="onRangeChange('bass_range', 'bass_span', 1, false)" min=0 max=15 value=#SOUND-BASS#><span id="bass_span"></span><br>
-						<span class="bold";>  Bass frequency: </span><input type="range"  id="bassfreq_range" name="bassfreq"  onChange="onRangeChangeFreqBass('bassfreq_range', 'bassfreq_span', 10, false)" min=2 max=15 value=#SOUND-BASS-FREQ#><span id="bassfreq_span"></span><br>
-						<span class="bold";>  Spacialization: </span><input type="range"  id="spacial_range" name="spacial"  onChange="onRangeChangeSpatial('spacial_range', 'spacial_span')" min=0 max=3 value=#SOUND-SPACIAL#><span id="spacial_span"></span><br>
+						<span class="bold">Treble control: </span><input type="range" id="treble_range" name="treble"  onChange="onRangeChange('treble_range', 'treble_span', 1.5, false)" min=-8 max=7 value=#SOUND-TREBLE#> <span id="treble_span"></span><br>
+						<span class="bold">Treble frequency: </span><input type="range" id="treblefreq_range" name="treblefreq"  onChange="onRangeChangeFreqTreble('treblefreq_range', 'treblefreq_span', 1, false)" min=1 max=15 value=#SOUND-TREBLE-FREQ#> <span id="treblefreq_span"></span><br>
+						<span class="bold">  Bass enhance: </span><input type="range"  id="bass_range" name="bass"  onChange="onRangeChange('bass_range', 'bass_span', 1, false)" min=0 max=15 value=#SOUND-BASS#> <span id="bass_span"></span><br>
+						<span class="bold">  Bass frequency: </span><input type="range"  id="bassfreq_range" name="bassfreq"  onChange="onRangeChangeFreqBass('bassfreq_range', 'bassfreq_span', 10, false)" min=2 max=15 value=#SOUND-BASS-FREQ#> <span id="bassfreq_span"></span><br>
+						<span class="bold">  Spacialization: </span><input type="range"  id="spacial_range" name="spacial"  onChange="onRangeChangeSpatial('spacial_range', 'spacial_span')" min=0 max=3 value=#SOUND-SPACIAL#> <span id="spacial_span"></span><br>
 						<br/>
-						<span class="bold"; >Volume: </span><input type="range" id="vol_range" name="vol" style=" font-weight:bold; background-color:C1DFFF;" onChange="onRangeVolChange(this.value)" min=100 max=254 value=#SOUND-VOL#><span id="vol_span"></span><br>
+						<span class="bold">Volume: </span><input type="range" id="vol_range" name="vol" style=" font-weight:bold; background-color:C1DFFF;" onChange="onRangeVolChange(this.value)" min=100 max=254 value=#SOUND-VOL#> <span id="vol_span"></span><br>
 						</p>
-					</form>
 					<h1>Stations settings</h1>
-					<form>
-						<input type="button"  onClick="saveSoundSettings()" value="Save Stations">
-						<input type="button"  onClick="saveSoundSettings()" value="Load Stations">
-					</form>
+						<input type="button"  onClick="saveTextAsFile()" value="Save Stations from WebRadio"> To <input type="text" value="WebStations.txt" id="filename">
+						<a HREF="" download="WebStations.txt" id="downloadlink" style="display: none">Download it</a><br/><br/>
+						<input type="button"  onClick="saveSoundSettings()" value="Load Stations to WebRadio"> From 
+						<input type="file" id="input">
+						
 					</div>
 				</li>
 				</ul>
 			</div>
-		</div>		
+		</div>	
 	</body>
 </HTML>
