@@ -34,6 +34,4 @@ struct icyHeader* clientGetHeader();
 void clientConnect();
 void clientDisconnect();
 void clientTask(void *pvParams);
-bool clientTakesHeader();
-bool clientGivesHeader();
 void vsTask(void *pvParams) ;

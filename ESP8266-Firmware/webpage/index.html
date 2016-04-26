@@ -99,13 +99,13 @@
 					<div id="tab-content3" class="tab-content">
 					<h1>Sound settings</h1>
 						<p>
-						<span class="bold">Treble control: </span><input type="range" id="treble_range" name="treble"  onChange="onRangeChange('treble_range', 'treble_span', 1.5, false)" min=-8 max=7 value=#SOUND-TREBLE#> <span id="treble_span"></span><br>
-						<span class="bold">Treble frequency: </span><input type="range" id="treblefreq_range" name="treblefreq"  onChange="onRangeChangeFreqTreble('treblefreq_range', 'treblefreq_span', 1, false)" min=1 max=15 value=#SOUND-TREBLE-FREQ#> <span id="treblefreq_span"></span><br>
-						<span class="bold">  Bass enhance: </span><input type="range"  id="bass_range" name="bass"  onChange="onRangeChange('bass_range', 'bass_span', 1, false)" min=0 max=15 value=#SOUND-BASS#> <span id="bass_span"></span><br>
-						<span class="bold">  Bass frequency: </span><input type="range"  id="bassfreq_range" name="bassfreq"  onChange="onRangeChangeFreqBass('bassfreq_range', 'bassfreq_span', 10, false)" min=2 max=15 value=#SOUND-BASS-FREQ#> <span id="bassfreq_span"></span><br>
-						<span class="bold">  Spacialization: </span><input type="range"  id="spacial_range" name="spacial"  onChange="onRangeChangeSpatial('spacial_range', 'spacial_span')" min=0 max=3 value=#SOUND-SPACIAL#> <span id="spacial_span"></span><br>
+						<span class="bold">Treble control: </span><input type="range" id="treble_range" name="treble"  onChange="onRangeChange('treble_range', 'treble_span', 1.5, false)" min=-8 max=7 > <span id="treble_span"></span><br>
+						<span class="bold">Treble frequency: </span><input type="range" id="treblefreq_range" name="treblefreq"  onChange="onRangeChangeFreqTreble('treblefreq_range', 'treblefreq_span', 1, false)" min=1 max=15 > <span id="treblefreq_span"></span><br>
+						<span class="bold">  Bass enhance: </span><input type="range"  id="bass_range" name="bass"  onChange="onRangeChange('bass_range', 'bass_span', 1, false)" min=0 max=15 > <span id="bass_span"></span><br>
+						<span class="bold">  Bass frequency: </span><input type="range"  id="bassfreq_range" name="bassfreq"  onChange="onRangeChangeFreqBass('bassfreq_range', 'bassfreq_span', 10, false)" min=2 max=15 > <span id="bassfreq_span"></span><br>
+						<span class="bold">  Spacialization: </span><input type="range"  id="spacial_range" name="spacial"  onChange="onRangeChangeSpatial('spacial_range', 'spacial_span')" min=0 max=3 > <span id="spacial_span"></span><br>
 						<br/>
-						<span class="bold">Volume: </span><input type="range" id="vol_range" name="vol" style=" font-weight:bold; background-color:C1DFFF;" onChange="onRangeVolChange(this.value)" min=100 max=254 value=#SOUND-VOL#> <span id="vol_span"></span><br>
+						<span class="bold">Volume: </span><input type="range" id="vol_range" name="vol" style=" font-weight:bold; background-color:C1DFFF;" onChange="onRangeVolChange(this.value)" min=100 max=254 > <span id="vol_span"></span><br>
 						</p>
 					<h1>Stations settings</h1>
 						<input type="button"  onClick="saveTextAsFile()" value="Save Stations from WebRadio"> To <input type="text" value="WebStations.txt" id="filename">

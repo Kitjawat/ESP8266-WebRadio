@@ -116,15 +116,7 @@ ICACHE_FLASH_ATTR struct icyHeader* clientGetHeader()
 	return &header;
 }
 
-ICACHE_FLASH_ATTR bool clientTakesHeader()
-{
-	return xSemaphoreTake(sHeader,portMAX_DELAY);
-}	
-
-ICACHE_FLASH_ATTR bool clientGivesHeader()
-{
-	return xSemaphoreGive(sHeader);
-}	
+	
 ICACHE_FLASH_ATTR bool clientParsePlaylist(char* s)
 {
   char* str = strstr(s,"http://");
@@ -165,26 +157,19 @@ ICACHE_FLASH_ATTR bool clientParsePlaylist(char* s)
 }
 ICACHE_FLASH_ATTR char* stringify(char* str,int *len)
 {
+		if (strchr(str,'"') == NULL) return str;;
 		char* new = malloc(strlen(str)+100);
 //		printf("stringify: enter: len:%d\n",*len);
 		int i=0 ,j =0;
 		for (i = 0;i< strlen(str)+100;i++) new[i] = 0;
 		for (i=0;i< strlen(str);i++)
 		{
-			if ((str)[i] == '"') new[j++] = '\\';
+			if (str[i] == '"') new[j++] = '\\';
 			new[j++] =(str)[i] ;
 		}
-//		printf("stringify: output: len:%d\n",*len);
-		if (*len == j+1)
-		{
-			free(new);
-			return str;
-		} else
-		{
-			free(str);
-			*len = j+1;
-			return new;
-		}		
+		free(str);
+		*len = j+1;
+		return new;		
 }	
 ICACHE_FLASH_ATTR void clientParseHeader(char* s)
 {
@@ -192,7 +177,7 @@ ICACHE_FLASH_ATTR void clientParseHeader(char* s)
 	uint8_t header_num;
 //	printf("ParseHeader: %s\n",s);
 	xSemaphoreTake(sHeader,portMAX_DELAY);
-//	if (cstatus != C_HEADER1) // not ended. dont clear
+	if ((cstatus != C_HEADER1)&& (cstatus != C_PLAYLIST))// not ended. dont clear
 	{
 		for(header_num=0; header_num<ICY_HEADERS_COUNT; header_num++) {
 			if(header_num != METAINT) if(header.members.mArr[header_num] != NULL) {
@@ -269,7 +254,6 @@ ICACHE_FLASH_ATTR void clientParseHeader(char* s)
 /*
 ICACHE_FLASH_ATTR uint16_t clientProcessMetadata(char* s, uint16_t size)
 {
-	clientTakesHeader();
 	uint16_t processed = 0;
 	if(metasize == 0) { metasize = s[0]*16; processed = 1; }
 	if(metasize == 0) return 1; // THERE IS NO METADATA
@@ -410,8 +394,7 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 				VS1053_flush_cancel(false);
 				VS1053_flush_cancel(true);
 				int newlen = len - (t1-pdata) - 4;
-//				if(newlen > 0) clientReceiveCallback(NULL, t1+4, newlen);
-				if(newlen > 0) bufferWrite(t1+4, newlen);
+				if(newlen > 0) clientReceiveCallback(NULL, t1+4, newlen);
 			}
 		}
 	break;
@@ -490,7 +473,7 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 				  cstatus = C_PLAYLIST;
 				  sprintf(buffer, "GET %s HTTP/1.0\r\nHOST: %s\r\n\r\n", clientPath,clientURL); //ask for the playlist
 			    } 
-				else sprintf(buffer, "GET %s HTTP/1.0\r\nHOST: %s\r\nicy-metadata:0\r\n\r\n", clientPath,clientURL); 
+				else sprintf(buffer, "GET %s HTTP/1.0\r\nHOST: %s\r\nicy-metadata:1\r\n\r\n", clientPath,clientURL); 
 //				printf("Client Sent:\n%s\n",buffer);
 				send(sockfd, buffer, strlen(buffer), 0);
 

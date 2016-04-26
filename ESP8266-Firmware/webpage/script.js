@@ -5,8 +5,10 @@ var cjson = "application/json";
 function saveTextAsFile()
 {
 	var output = ''; 
-	for (var key in localStorage) {
-	output = output+(localStorage[key])+'\n';
+//	for (var key in localStorage) {
+	for (var id =0;id<192 ;id++) {
+//	output = output+(localStorage[key])+'\n';
+	output = output+(localStorage[id])+'\n';
 	}
     var textFileAsBlob = new Blob([output], {type:'text/plain'});
     var downloadLink = document.getElementById('downloadlink');
@@ -27,17 +29,30 @@ function refresh() {
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4 && xhr.status == 200) {
 			var arr = JSON.parse(xhr.responseText);
-			document.getElementById('descr').innerHTML = arr["descr"];
-			document.getElementById('name').innerHTML = arr["name"];
-			document.getElementById('bitr').innerHTML = arr["bitr"];
-			document.getElementById('not1').innerHTML = arr["not1"];
-			document.getElementById('not2').innerHTML = arr["not2"];
-			document.getElementById('genre').innerHTML = arr["genre"];
-			document.getElementById('url1').innerHTML = arr["url1"];
-			document.getElementById('url2').href = arr["url1"];
+			document.getElementById('descr').innerHTML = arr["descr"].replace(/\\/g,"");
+			document.getElementById('name').innerHTML = arr["name"].replace(/\\/g,"");
+			document.getElementById('bitr').innerHTML = arr["bitr"].replace(/\\/g,"");
+			document.getElementById('not1').innerHTML = arr["not1"].replace(/\\/g,"").replace(/^<BR>/,"");
+			document.getElementById('not2').innerHTML = arr["not2"].replace(/\\/g,"");
+			document.getElementById('genre').innerHTML = arr["genre"].replace(/\\/g,"");
+			document.getElementById('url1').innerHTML = arr["url1"].replace(/\\/g,"");
+			document.getElementById('url2').href = arr["url1"].replace(/\\/g,"");
+			document.getElementById('vol_range').value = arr["vol"].replace(/\\/g,"");
+			document.getElementById('treble_range').value = arr["treb"].replace(/\\/g,"");
+			document.getElementById('bass_range').value = arr["bass"].replace(/\\/g,"");
+			document.getElementById('treblefreq_range').value = arr["tfreq"].replace(/\\/g,"");
+			document.getElementById('bassfreq_range').value = arr["bfreq"].replace(/\\/g,"");
+			document.getElementById('spacial_range').value = arr["spac"].replace(/\\/g,"");
+			
+			onRangeVolChange(document.getElementById('vol_range').value);
+			onRangeChange('treble_range', 'treble_span', 1.5, false,true);
+			onRangeChange('bass_range', 'bass_span', 1, false,true);
+			onRangeChangeFreqTreble('treblefreq_range', 'treblefreq_span', 1, false,true);
+			onRangeChangeFreqBass('bassfreq_range', 'bassfreq_span', 10, false,true);
+			onRangeChangeSpatial('spacial_range', 'spacial_span', true);
 		}
 	}
-	xhr.open("POST","icy",false);
+	xhr.open("POST","icy",true);
 	xhr.setRequestHeader(content,ctype);
 	xhr.send("&");
 }
@@ -96,7 +111,7 @@ function instantPlay() {
 	if (!(document.getElementById('instant_path').value.substring(0, 1) === "/")) document.getElementById('instant_path').value = "/" + document.getElementById('instant_path').value;
 	document.getElementById('instant_url').value = document.getElementById('instant_url').value.replace(/^https?:\/\//,'');
 	xhr.send("url=" + document.getElementById('instant_url').value + "&port=" + document.getElementById('instant_port').value + "&path=" + document.getElementById('instant_path').value+"&");
-	window.setTimeout(refresh, 1000);
+	window.setTimeout(refresh, 200);
 }
 function playStation() {
 	select = document.getElementById('stationsSelect');
@@ -107,7 +122,7 @@ function playStation() {
 	xhr.send("id=" + select.options[select.options.selectedIndex].id+"&");
 //	window.location.replace("/");
 //    window.location.reload(false);
-	window.setTimeout(refresh, 1000);
+	window.setTimeout(refresh, 200);
 }
 function stopStation() {
 	var select = document.getElementById('stationsSelect');
@@ -236,7 +251,7 @@ function loadStationsList(max) {
 	}		
 	document.getElementById("stationsSelect").disabled = true;
 	for(var id=0; id<max; id++) {
-		if (foundNull) break;
+//		if (foundNull) break;
 		idstr = id.toString();
 		if (localStorage.getItem(idstr) != null)
 		{	
@@ -253,13 +268,13 @@ function loadStationsList(max) {
 					foundNull = cploadStationsList(id,arr);
 				}
 			}
-			xhr.open("POST","getStation",false);
+			xhr.open("POST","getStation",true);
 			xhr.setRequestHeader(content,ctype);
 			xhr.send("idgp=" + id+"&");
 		}
 	}
-	document.getElementById("stationsSelect").disabled = false;
 	select = document.getElementById('stationsSelect');
+	select.disabled = false;
 	select.options.selectedIndex= parseInt(localStorage.getItem('selindexstore'));
 //	getSelIndex();
 }
@@ -300,15 +315,9 @@ document.addEventListener("DOMContentLoaded", function() {
 	document.getElementById("tab3").addEventListener("click", function() {
 			setMainHeight("tab-content3");
 		});
-	onRangeChange('treble_range', 'treble_span', 1.5, false,true);
-	onRangeChange('bass_range', 'bass_span', 1, false,true);
-	onRangeChangeFreqTreble('treblefreq_range', 'treblefreq_span', 1, false,true);
-	onRangeChangeFreqBass('bassfreq_range', 'bassfreq_span', 10, false,true);
-	onRangeChangeSpatial('spacial_range', 'spacial_span', true);
-	onRangeVolChange(document.getElementById('vol_range').value);
-	saveSoundSettings();
-	loadStationsList(192);
+
+	loadStationsList(191);
 	refresh();
 	setMainHeight("tab-content1");
-	window.setInterval(refresh,60000);
+	window.setInterval(refresh,10000);
 });

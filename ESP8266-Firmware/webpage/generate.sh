@@ -1,5 +1,5 @@
 #!/bin/bash
-yui-compressor --preserve-semi --nomunge -v -o style.min.css style.css 
+yui-compressor  -v -o style.min.css style.css 
 mv style.css style.ori
 cp style.min.css style.css
 xxd -i style.css > style
