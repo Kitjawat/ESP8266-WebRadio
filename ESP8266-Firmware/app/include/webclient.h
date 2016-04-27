@@ -1,5 +1,9 @@
-#include "c_types.h"
+#ifndef __WEBCLIENT_H__
+#define __WEBCLIENT_H__
 
+#include "c_types.h"
+#define METADATA 9
+#define METAINT 8
 #define ICY_HEADERS_COUNT 9
 struct icyHeader
 {
@@ -15,12 +19,17 @@ struct icyHeader
 			char* bitrate;
 			char* description;
 			char* audioinfo;
-			char* metadata;
 			int metaint;
+			char* metadata;
 		} single;
 		char* mArr[ICY_HEADERS_COUNT];
 	} members;
 };
+
+
+
+static const char* icyHeaders[] = { "icy-name:", "icy-notice1:", "icy-notice2:",  "icy-url:", "icy-genre:", "icy-br:","icy-description:","ice-audio-info:", "icy-metaint:" };
+
 
 enum clientStatus { C_HEADER, C_HEADER1,C_METADATA, C_DATA, C_PLAYLIST, C_PLAYLIST1 };
 
@@ -35,3 +44,5 @@ void clientConnect();
 void clientDisconnect();
 void clientTask(void *pvParams);
 void vsTask(void *pvParams) ;
+
+#endif

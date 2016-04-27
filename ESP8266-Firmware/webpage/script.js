@@ -37,6 +37,7 @@ function refresh() {
 			document.getElementById('genre').innerHTML = arr["genre"].replace(/\\/g,"");
 			document.getElementById('url1').innerHTML = arr["url1"].replace(/\\/g,"");
 			document.getElementById('url2').href = arr["url1"].replace(/\\/g,"");
+			document.getElementById('meta').innerHTML = arr["meta"].replace(/\\/g,"").replace(/\'/g,"");
 			document.getElementById('vol_range').value = arr["vol"].replace(/\\/g,"");
 			document.getElementById('treble_range').value = arr["treb"].replace(/\\/g,"");
 			document.getElementById('bass_range').value = arr["bass"].replace(/\\/g,"");

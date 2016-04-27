@@ -308,14 +308,15 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 		if (not2 ==NULL) not2=header->members.single.audioinfo;
 		if ((header->members.single.notice2 != NULL)&(strlen(header->members.single.notice2)==0)) not2=header->members.single.audioinfo;
 		int json_length ;
-		json_length =134+
+		json_length =144+
 		((header->members.single.description ==NULL)?0:strlen(header->members.single.description)) +
 		((header->members.single.name ==NULL)?0:strlen(header->members.single.name)) +
 		((header->members.single.bitrate ==NULL)?0:strlen(header->members.single.bitrate)) +
 		((header->members.single.url ==NULL)?0:strlen(header->members.single.url))+ 
 		((header->members.single.notice1 ==NULL)?0:strlen(header->members.single.notice1))+
 		((not2 ==NULL)?0:strlen(not2))+
-		((header->members.single.genre ==NULL)?0:strlen(header->members.single.genre))
+		((header->members.single.genre ==NULL)?0:strlen(header->members.single.genre))+
+		((header->members.single.metadata ==NULL)?0:strlen(header->members.single.metadata))
 		+	strlen(vol) +strlen(treble)+strlen(bass)+strlen(tfreq)+strlen(bfreq)+strlen(spac)
 		;
 //		printf("icy start header %x  len:%d vollen:%d vol:%s\n",header,json_length,strlen(vol),vol);
@@ -327,7 +328,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			respOk(conn);
 		}
 		else {				
-			sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"descr\":\"%s\",\"name\":\"%s\",\"bitr\":\"%s\",\"url1\":\"%s\",\"not1\":\"%s\",\"not2\":\"%s\",\"genre\":\"%s\",\"vol\":\"%s\",\"treb\":\"%s\",\"bass\":\"%s\",\"tfreq\":\"%s\",\"bfreq\":\"%s\",\"spac\":\"%s\"}",
+			sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"descr\":\"%s\",\"name\":\"%s\",\"bitr\":\"%s\",\"url1\":\"%s\",\"not1\":\"%s\",\"not2\":\"%s\",\"genre\":\"%s\",\"meta\":\"%s\",\"vol\":\"%s\",\"treb\":\"%s\",\"bass\":\"%s\",\"tfreq\":\"%s\",\"bfreq\":\"%s\",\"spac\":\"%s\"}",
 			json_length,
 			(header->members.single.description ==NULL)?"":header->members.single.description,
 			(header->members.single.name ==NULL)?"":header->members.single.name,
@@ -336,6 +337,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			(header->members.single.notice1 ==NULL)?"":header->members.single.notice1,
 			(not2 ==NULL)?"":not2 ,
 			(header->members.single.genre ==NULL)?"":header->members.single.genre,
+			(header->members.single.metadata ==NULL)?"":header->members.single.metadata,			
 			vol,treble,bass,tfreq,bfreq,spac);
 //			printf("buf: %s\n",buf);
 			write(conn, buf, strlen(buf));
@@ -392,7 +394,7 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 	int recbytes =0;
 	int  client_sock =  *(int*)pvParams;
     char *buf = (char *)zalloc(1024);
-//	printf("Client entry  socket:%x\n",client_sock);
+//	printf("Client entry  socket:%x    ,",client_sock);
 	if (buf != NULL)
 	{
 		if (setsockopt (client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
@@ -422,9 +424,9 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 		}
 		free(buf);
 	}
- 	xSemaphoreGive(semclient);	
 	close(client_sock);
 //	printf("Client exit\n");
+ 	xSemaphoreGive(semclient);	
 	vTaskDelete( NULL );	
 }	
 ICACHE_FLASH_ATTR void serverTask(void *pvParams) {

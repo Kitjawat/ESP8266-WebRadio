@@ -11,19 +11,6 @@
 
 #include "vs1053.h"
 
-struct icyHeader header = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,   0};
-int headerlen[ICY_HEADERS_COUNT] = {0,0,0,0,0,0,0,0,0};
-
-//struct icyHeader header = {NULL, NULL, NULL, NULL, 0};
-char *metaint = NULL;
-char *clientURL = NULL;
-char *clientPath = NULL;
-uint16_t clientPort = 80;
-
-struct hostent *server;
-
-static const char* icyHeaders[] = { "icy-name:", "icy-notice1:", "icy-notice2:",  "icy-url:", "icy-genre:", "icy-br:","icy-description:","ice-audio-info:", "icy-metaint:" };
-#define METAINT 8
 
 static enum clientStatus cstatus;
 static uint32_t metacount = 0;
@@ -39,8 +26,16 @@ static uint8_t connect = 0, playing = 0;
 	- IP SETTINGS
 	- VS1053 - DELAY USING vTaskDelay
 */
+struct icyHeader header = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL};
+int headerlen[ICY_HEADERS_COUNT+1] = {0,0,0,0,0,0,0,0,0,0};
 
+char *metaint = NULL;
+char *clientURL = NULL;
+char *clientPath = NULL;
+uint16_t clientPort = 80;
 
+struct hostent *server;
+int rest ;
 ///////////////
 #define BUFFER_SIZE 10240
 
@@ -157,20 +152,59 @@ ICACHE_FLASH_ATTR bool clientParsePlaylist(char* s)
 }
 ICACHE_FLASH_ATTR char* stringify(char* str,int *len)
 {
-		if (strchr(str,'"') == NULL) return str;;
+		if ((strchr(str,'"') == NULL)) return str;
 		char* new = malloc(strlen(str)+100);
 //		printf("stringify: enter: len:%d\n",*len);
 		int i=0 ,j =0;
 		for (i = 0;i< strlen(str)+100;i++) new[i] = 0;
 		for (i=0;i< strlen(str);i++)
 		{
-			if (str[i] == '"') new[j++] = '\\';
+			if (str[i] == '"') {
+				new[j++] = '\\';
+
+			}
+
 			new[j++] =(str)[i] ;
 		}
 		free(str);
-		*len = j+1;
+		if (j+1>*len)*len = j+1;
 		return new;		
+}
+
+ICACHE_FLASH_ATTR void clientSaveMetadata(char* s,uint16_t len,bool catenate)
+{
+	    int oldlen = 0;
+		if (catenate) oldlen = strlen(header.members.mArr[METADATA]);
+		char* t_end;
+		char* t = strstr(s,"StreamTitle='");
+		if (t != NULL) t += 13;
+		t_end = strstr(t,"'");
+		if (t_end != NULL) len = t_end - t;
+		s = t;
+		if((header.members.mArr[METADATA] != NULL)&&(headerlen[METADATA] < (oldlen+len+1)*sizeof(char))) 
+		{	// realloc if new malloc is bigger (avoid heap fragmentation)
+			printf("clientsaveMeta free  %d < %d\n",headerlen[METADATA],(oldlen+len+1)*sizeof(char));
+			free(header.members.mArr[METADATA]);
+			header.members.mArr[METADATA] = NULL;
+		}
+		if(header.members.mArr[METADATA] == NULL) {
+			header.members.mArr[METADATA] = (char*)malloc((oldlen  +len+1)*sizeof(char));
+			printf("clientsaveMeta malloc len:%d\n",(oldlen  +len+1)*sizeof(char));
+			headerlen[METADATA] = (oldlen +len+1)*sizeof(char);
+		}	
+		if(header.members.mArr[METADATA] != NULL)
+		{
+			int i;
+			printf("clientsaveMeta i=%d  until=%d  from +%d \n",oldlen,oldlen +len+1,oldlen);
+			for(i = oldlen; i< oldlen +len+1; i++) 
+				{header.members.mArr[METADATA][i] = 0;}
+			strncpy(&(header.members.mArr[METADATA][oldlen]), s,len);
+//			printf("metadata before addr:0x%x  cont:%s\n",header.members.mArr[METADATA],header.members.mArr[METADATA]);
+			header.members.mArr[METADATA] = stringify(header.members.mArr[METADATA],&headerlen[METADATA]);
+			printf("metadata after  addr:0x%x  metadata:%s\n",header.members.mArr[METADATA],header.members.mArr[METADATA]);
+		}	
 }	
+	
 ICACHE_FLASH_ATTR void clientParseHeader(char* s)
 {
 	// icy-notice1 icy-notice2 icy-name icy-genre icy-url icy-br
@@ -189,6 +223,7 @@ ICACHE_FLASH_ATTR void clientParseHeader(char* s)
 	}
 	for(header_num=0; header_num<ICY_HEADERS_COUNT; header_num++)
 	{
+//				printf("icy deb: %d\n",header_num);		
 		char *t;
 		t = strstr(s, icyHeaders[header_num]);
 		if( t != NULL )
@@ -197,11 +232,11 @@ ICACHE_FLASH_ATTR void clientParseHeader(char* s)
 			char *t_end = strstr(t, "\r\n");
 			if(t_end != NULL)
 			{
+//				printf("icy in: %d\n",header_num);		
 				uint16_t len = t_end - t;
 				if(header_num != METAINT) // Text header field
 				{
 					if((header.members.mArr[header_num] != NULL)&&(headerlen[header_num] < (len+1)*sizeof(char))) 
-//					if(header.members.mArr[header_num] != NULL)
 					{	// realloc if new malloc is bigger (avoid heap fragmentation)
 						free(header.members.mArr[header_num]);
 						header.members.mArr[header_num] = NULL;
@@ -229,20 +264,12 @@ ICACHE_FLASH_ATTR void clientParseHeader(char* s)
 					}
 					if (metaint == NULL) { metaint = (char*) malloc((len+1)*sizeof(char));headerlen[header_num]= (len+1)*sizeof(char);}
 					if (metaint != NULL)
-					{	
-/*					char *buf = (char*) malloc((len+1)*sizeof(char));
-					if(buf != NULL)
-					{
-						int i;
-						for(i = 0; i<len+1; i++) buf[i] = 0;
-						strncpy(buf, t, len);
-						header.members.single.metaint = atoi(buf);
-						free(buf); 
-*/						
+					{					
 						int i;
 						for(i = 0; i<len+1; i++) metaint[i] = 0;
 						strncpy(metaint, t, len);
 						header.members.single.metaint = atoi(metaint);
+						printf("MetaInt= %s, Metaint= %d\n",metaint,header.members.single.metaint);
 					}
 //			printf("icy: %s: %d\n",icyHeaders[header_num],header.members.single.metaint);					
 				}
@@ -353,8 +380,9 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 		- Buffer underflow handling (?)
 	*/
 	static int metad = -1;
+
 	uint16_t l ;
-	char *t1;
+	char* t1;
 	switch (cstatus)
 	{
 	case C_PLAYLIST:
@@ -385,7 +413,8 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 		else {
 			clientParseHeader(pdata);
 			cstatus = C_HEADER1;
-			if(header.members.single.metaint > 0) metad = header.members.single.metaint;
+			if(header.members.single.metaint > 0) 
+				metad = header.members.single.metaint;
 			t1 = strstr(pdata, "\r\n\r\n"); // END OF HEADER
 			if(t1 != NULL) {
 				//processed = t1-pdata + 4;
@@ -400,26 +429,49 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 	break;
 	default:
 		l = 0;
-		char* buf = pdata;
-		/*if(len > metad) {
-			int l = pdata[metad+1]*16;
-			printf("%d\n", l);
-			int rest = len - (&(pdata[metad+1])-pdata) -l;
-			metad = header.members.single.metaint - rest;
-		} else metad -= len;*/
-/*		do {
-			if(getBufferFree() < len) vTaskDelay(1);
-			else l = bufferWrite(buf, len);
-		} while(l < len);
-*/
+		char* buf = pdata;		
+// -----------	
+	
+		if(len > metad) {
+			int l = pdata[metad]*16;
+			rest = len - metad  -l -1;
+			if (l !=0)
+			{
+				printf("len:%d, metad:%d, l:%d, rest:%d, str: %s\n",len,metad, l,rest,pdata+metad+1 );
+				clientSaveMetadata(pdata+metad+1,l,false);
+			}	
+			
+			while(getBufferFree() < metad) vTaskDelay(1);
+			l = bufferWrite(buf, metad); 
+			buf = pdata+len-rest;
+			metad = header.members.single.metaint - rest ; //until next
+			if (rest >0)
+			{	
+				while(getBufferFree() < rest) vTaskDelay(1);
+				l = bufferWrite(buf, rest); 
+				rest = 0;
+			} 
+	
+		} else 
+		{	
+	        if (rest <0) 
+			{
+				printf("Negative len = %d, metad = %d  rest = %d\n",len,metad,rest);
+				clientSaveMetadata(pdata,-rest,true);
+				buf =pdata+rest; len +=rest;metad += rest; rest = 0;
+				printf("Negative1 len = %d, metad = %d  rest = %d\n",len,metad,rest);
+			}	
+			metad -= len;
+//			printf("len = %d, metad = %d\n",len,metad);
 			while(getBufferFree() < len) vTaskDelay(1);
-			l = bufferWrite(buf, len);
-
+			if (len >0) bufferWrite(buf, len);	
+		}
+// ---------------			
 		if(!playing && (getBufferFree() < BUFFER_SIZE/2)) {
 			playing=1;
 			printf("Playing\n");
 		}
-	break;	
+		break;	
     }
 }
 
