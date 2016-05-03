@@ -1,8 +1,39 @@
 # **ESP8266-WebRadio** #
 ###WiFi shoutcast player based on ESP8266 chip
 ##Basic informations
-Version: 0.13<br />
+Version: 1.0.0 (KaraWin)<br />
 Status: under design and development
+### 2016, May (KaraWin)
+First step, Final release done.
+- Read up to 320 kB/s stream,
+- New web page, Fit well on mobile or computer.
+- Embedded wifi configuration via the web site (see below)
+- Metadata displayed,
+- all settings saved (sound setting, stations, wifi)
+- server multi clients with automatic refresh for all,
+- The stations can be dowloaded and uploaded within the web site,
+- very quick responsive web by caching local information in the browser.
+- additional hardware: a led indicates the state of the equipment (gpo16->resistor->led->3.3volt). Speed blink: init, 90%in 10%out: connexion in progress, 10% in 90%out: Equipment ready.
+- ...
+
+#### Loading the esp8266
+- ESP8266-WebRadio\ESP8266-Firmware\bin\boot_v1.5.bin at 0x0000
+- ESP8266-WebRadio\ESP8266-Firmware\bin\upgrade\user1.4096.new.6.bin at 0x1000
+
+#### First use
+- If the acces point of your router is not known, the webradio inits itself as an AP. Connect your wifi to the ssid "WifiWebRadio",  
+- Browse to 192.164.4.1 to display the page, got to "setting" "Wifi" and configure your ssid ap, the password if any, the wanted IP or use dhcp if you know how to retrieve the dhcp given ip (terminal or scan of the network).
+- In the gateway field, enter the ip address of your router.
+- Validate. The equipment restart to the new configuration. Connect your wifi to your AP and browse to the ip given in configuration.
+- if 
+- Congratulation, you can edit your own station list. Dont forget to save your stations list in case of problem or for new equipments.
+- if the AP is already know by the esp8266, the default ip at the first start is 192.168.1.254
+
+#### Feedback
+Please tell me if you succeded or something more can be done, thanks.<br/>
+The second step will add some hardware buttons (vol + -, station + -, play ...)
+
+
 ### 2016,April (Karawin):
 - Based on https://github.com/PiotrSperka/ESP8266-WebRadio<br />
 - New development based on the new https://github.com/espressif/ESP8266_RTOS_SDK<br />
