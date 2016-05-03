@@ -76,4 +76,4 @@
  ../../include/espressif/esp8266/uart_register.h \
  ../../include/espressif/smartconfig.h \
  ../../include/espressif/spi_flash.h ../../include/espressif/pwm.h \
- ../include/vs1053.h
+ ../include/vs1053.h ../include/eeprom.h

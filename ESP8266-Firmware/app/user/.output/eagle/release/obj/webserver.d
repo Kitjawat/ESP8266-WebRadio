@@ -52,6 +52,31 @@
  ../../include/freertos/mpu_wrappers.h ../../include/freertos/task.h \
  ../../include/freertos/list.h ../../include/freertos/queue.h \
  ../../include/freertos/semphr.h ../../include/freertos/queue.h \
+ ../../include/espressif/esp_common.h ../../include/espressif/c_types.h \
+ ../../include/espressif/esp_libc.h ../../include/espressif/esp_misc.h \
+ ../../include/espressif/esp_wifi.h ../../include/espressif/esp_softap.h \
+ ../../include/espressif/queue.h ../../include/espressif/esp_sta.h \
+ ../../include/espressif/esp_system.h ../../include/espressif/esp_timer.h \
+ ../../include/espressif/esp_ssc.h ../../include/espressif/esp_spiffs.h \
+ ../../include/spiffs/spiffs.h ../../include/spiffs/spiffs_config.h \
+ /home/jp/esp-open-sdk/xtensa-lx106-elf/xtensa-lx106-elf/include/stdlib.h \
+ /home/jp/esp-open-sdk/xtensa-lx106-elf/xtensa-lx106-elf/include/machine/stdlib.h \
+ /home/jp/esp-open-sdk/xtensa-lx106-elf/xtensa-lx106-elf/include/alloca.h \
+ /home/jp/esp-open-sdk/xtensa-lx106-elf/xtensa-lx106-elf/include/string.h \
+ /home/jp/esp-open-sdk/xtensa-lx106-elf/xtensa-lx106-elf/include/sys/cdefs.h \
+ /home/jp/esp-open-sdk/xtensa-lx106-elf/xtensa-lx106-elf/include/sys/string.h \
+ ../../include/espressif/esp8266/esp8266.h \
+ ../../include/espressif/esp8266/ets_sys.h \
+ ../../include/espressif/esp8266/eagle_soc.h \
+ ../../include/espressif/esp8266/gpio_register.h \
+ ../../include/espressif/esp8266/pin_mux_register.h \
+ ../../include/espressif/esp8266/spi_register.h \
+ ../../include/espressif/esp8266/timer_register.h \
+ ../../include/espressif/esp8266/uart_register.h \
+ ../../include/espressif/smartconfig.h \
+ ../../include/espressif/spi_flash.h ../../include/espressif/pwm.h \
+ ../../include/espressif/esp_softap.h ../../include/espressif/esp_wifi.h \
  ../../include/lwip/lwip/sockets.h ../../include/lwip/ipv4/lwip/inet.h \
  ../../include/lwip/ipv6/lwip/inet6.h ../../include/lwip/lwip/dns.h \
- ../../include/lwip/lwip/netdb.h ../include/flash.h ../include/eeprom.h
+ ../../include/lwip/lwip/netdb.h ../include/flash.h ../include/eeprom.h \
+ ../include/interface.h

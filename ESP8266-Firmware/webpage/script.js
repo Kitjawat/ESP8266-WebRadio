@@ -1,68 +1,111 @@
 var content = "Content-type";
 var ctype = "application/x-www-form-urlencoded";
 var cjson = "application/json";
+function chkip($this)
+{
+  if ( /^([0-9]+\.){3}[0-9]+$/.test($this.value) ) $this.style.color = "green";
+  else $this.style.color = "red";
+}  
+function clickdhcp() {
+  if (document.getElementById("dhcp").checked)
+  {
+    document.getElementById("ip").setAttribute("disabled","") ;
+    document.getElementById("mask").setAttribute("disabled","") ;
+    document.getElementById("gw").setAttribute("disabled","") ;
+  } else {
+      document.getElementById("ip").removeAttribute("disabled") ;
+      document.getElementById("mask").removeAttribute("disabled") ;
+      document.getElementById("gw").removeAttribute("disabled") ;
+  }
+}  
+
+function valid() {
+	wifi(1);
+    alert("System reboot. Please change your browser address to the new one.");
+}
+
+function promptworking(label) {
+	document.getElementById('working').innerHTML = label;
+	if (label == "")
+		 document.getElementById('working').style.display = "none";
+	else {document.getElementById('working').style.display = "block"; }
+}
 
 function saveTextAsFile()
 {
 	var output = ''; 
+	promptworking("Working... Please wait");
 //	for (var key in localStorage) {
-	for (var id =0;id<192 ;id++) {
+	for (var id =0;id<191 ;id++) {
 //	output = output+(localStorage[key])+'\n';
 	output = output+(localStorage[id])+'\n';
 	}
     var textFileAsBlob = new Blob([output], {type:'text/plain'});
     var downloadLink = document.getElementById('downloadlink');
-	downloadLink.download = document.getElementById('filename').value;
-    if (window.webkitURL != null)
-        downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
-    else if(window.navigator.msSaveOrOpenBlob)
-		downloadLink.addEventListener("click",function(){
-                window.navigator.msSaveBlob(textFileAsBlob, document.getElementById('filename').value);
+	downloadLink.download = document.getElementById('filesave').value;
+	if (downloadLink.download == "")
+		alert("Please give a file name");
+	else {
+		if (window.webkitURL != null)
+			downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
+		else if(window.navigator.msSaveOrOpenBlob)
+			downloadLink.addEventListener("click",function(){
+                window.navigator.msSaveBlob(textFileAsBlob, downloadLink.download);
             });
-		else		
-			downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-    downloadLink.click();
+			else		
+				downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+		promptworking("");
+		downloadLink.click();
+	}
 }
 
 function refresh() {
 	xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4 && xhr.status == 200) {
-			var arr = JSON.parse(xhr.responseText);
-			document.getElementById('descr').innerHTML = arr["descr"].replace(/\\/g,"");
+			try{
+			var arr = JSON.parse(xhr.responseText);			
+			if (arr["descr"] =="")	document.getElementById('ldescr').style.display = "none";
+			else 	document.getElementById('ldescr').style.display = "inline-block";
+			document.getElementById('descr').innerHTML = arr["descr"].replace(/\\/g,"");			
 			document.getElementById('name').innerHTML = arr["name"].replace(/\\/g,"");
-			document.getElementById('bitr').innerHTML = arr["bitr"].replace(/\\/g,"");
+			if (arr["bitr"] ==""){	document.getElementById('lbitr').style.display = "none";}
+			else 	document.getElementById('lbitr').style.display = "inline-block";
+			document.getElementById('bitr').innerHTML = arr["bitr"].replace(/\\/g,"") + " kB/s";
+			if (arr["bitr"] =="") document.getElementById('bitr').innerHTML="";
+			if ((arr["not1"] =="")&& (arr["not2"] ==""))	document.getElementById('lnot1').style.display = "none";
+			else 	document.getElementById('lnot1').style.display = "inline-block";	
 			document.getElementById('not1').innerHTML = arr["not1"].replace(/\\/g,"").replace(/^<BR>/,"");
 			document.getElementById('not2').innerHTML = arr["not2"].replace(/\\/g,"");
+			if (arr["genre"] =="")	document.getElementById('lgenre').style.display = "none";
+			else 	document.getElementById('lgenre').style.display = "inline-block";	
 			document.getElementById('genre').innerHTML = arr["genre"].replace(/\\/g,"");
+			if (arr["url1"] =="")	document.getElementById('lurl').style.display = "none";
+			else 	document.getElementById('lurl').style.display = "inline-block";
 			document.getElementById('url1').innerHTML = arr["url1"].replace(/\\/g,"");
 			document.getElementById('url2').href = arr["url1"].replace(/\\/g,"");
-			document.getElementById('meta').innerHTML = arr["meta"].replace(/\\/g,"").replace(/\'/g,"");
+			document.getElementById('meta').innerHTML = arr["meta"].replace(/\\/g,"");
 			document.getElementById('vol_range').value = arr["vol"].replace(/\\/g,"");
 			document.getElementById('treble_range').value = arr["treb"].replace(/\\/g,"");
 			document.getElementById('bass_range').value = arr["bass"].replace(/\\/g,"");
 			document.getElementById('treblefreq_range').value = arr["tfreq"].replace(/\\/g,"");
 			document.getElementById('bassfreq_range').value = arr["bfreq"].replace(/\\/g,"");
 			document.getElementById('spacial_range').value = arr["spac"].replace(/\\/g,"");
-			
 			onRangeVolChange(document.getElementById('vol_range').value);
 			onRangeChange('treble_range', 'treble_span', 1.5, false,true);
 			onRangeChange('bass_range', 'bass_span', 1, false,true);
 			onRangeChangeFreqTreble('treblefreq_range', 'treblefreq_span', 1, false,true);
 			onRangeChangeFreqBass('bassfreq_range', 'bassfreq_span', 10, false,true);
 			onRangeChangeSpatial('spacial_range', 'spacial_span', true);
+			} catch(e){;}
 		}
 	}
-	xhr.open("POST","icy",true);
+	xhr.open("POST","icy",false);
 	xhr.setRequestHeader(content,ctype);
 	xhr.send("&");
+
 }
 
-/*function reloadAfter($seconds) {
-	setTimeout(function(){
-	   window.location.replace("/");
-	}, $seconds*1000);
-}*/
 function onRangeChange($range, $spanid, $mul, $rotate, $nosave) {
 	var val = document.getElementById($range).value;
 	if($rotate) val = document.getElementById($range).max - val;
@@ -100,11 +143,34 @@ function onRangeVolChange($value) {
 	document.getElementById('vol_range').value = $value;
 	document.getElementById('vol1_range').value = $value;
 	xhr = new XMLHttpRequest();
-	xhr.open("POST","soundvol",false);
+	xhr.open("POST","soundvol",true);
 	xhr.setRequestHeader(content,ctype);
 	xhr.send(  "vol=" + $value+"&");
 }
-
+function wifi(valid) {
+	xhr = new XMLHttpRequest();
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState == 4 && xhr.status == 200) {	
+			var arr = JSON.parse(xhr.responseText);
+			document.getElementById('ssid').value = arr["ssid"];
+			document.getElementById('passwd').value = arr["pasw"];
+			document.getElementById('ip').value = arr["ip"];
+			chkip(document.getElementById('ip'));
+			document.getElementById('mask').value = arr["msk"];
+			chkip(document.getElementById('mask'));
+			document.getElementById('gw').value = arr["gw"];
+			chkip(document.getElementById('gw'));
+			if (arr["dhcp"] == "1")
+				document.getElementById("dhcp").setAttribute("checked","");
+			else
+				document.getElementById("dhcp").removeAttribute("checked") ;
+			clickdhcp();
+		}
+	}
+	xhr.open("POST","wifi",false);
+	xhr.setRequestHeader(content,ctype);
+	xhr.send("valid=" + valid +"&ssid=" + document.getElementById('ssid').value + "&pasw=" + document.getElementById('passwd').value + "&ip=" + document.getElementById('ip').value+"&msk=" + document.getElementById('mask').value+"&gw=" + document.getElementById('gw').value+"&dhcp=" + document.getElementById('dhcp').checked+"&");
+}
 function instantPlay() {
 	xhr = new XMLHttpRequest();
 	xhr.open("POST","instant_play",false);
@@ -129,13 +195,13 @@ function stopStation() {
 	var select = document.getElementById('stationsSelect');
 	localStorage.setItem('selindexstore', select.options.selectedIndex.toString());
 	xhr = new XMLHttpRequest();
-	xhr.open("POST","stop",false);
+	xhr.open("POST","stop",true);
 	xhr.setRequestHeader(content,ctype);
 	xhr.send("id=" + select.options[select.options.selectedIndex].id+"&");
 }
 function saveSoundSettings() {
 	xhr = new XMLHttpRequest();
-	xhr.open("POST","sound",false);
+	xhr.open("POST","sound",true);
 	xhr.setRequestHeader(content,ctype);
 	xhr.send(
 	           "&bass=" + document.getElementById('bass_range').value 
@@ -155,11 +221,10 @@ function saveStation() {
 	xhr.setRequestHeader(content,ctype);
 	xhr.send("id=" + document.getElementById('add_slot').value + "&url=" + url + "&name=" + document.getElementById('add_name').value + "&file=" + file + "&port=" + document.getElementById('add_port').value+"&");
 	localStorage.setItem(document.getElementById('add_slot').value,"{\"Name\":\""+document.getElementById('add_name').value+"\",\"URL\":\""+url+"\",\"File\":\""+file+"\",\"Port\":\""+document.getElementById('add_port').value+"\"}");
-//	localStorage.clear();
 	window.location.reload(false);
 }
 function editStation(id) {
-	function cpedit() {
+	function cpedit(arr) {
 			document.getElementById('add_url').value = arr["URL"];
 			document.getElementById('add_name').value = arr["Name"];
 			document.getElementById('add_path').value = arr["File"];
@@ -171,25 +236,93 @@ function editStation(id) {
 	idstr = id.toString();			
 	if (localStorage.getItem(idstr) != null)
 	{	
-		var arr = JSON.parse(localStorage.getItem(idstr));
-		cpedit();
+		var arr; 
+		try{
+			arr = JSON.parse(localStorage.getItem(idstr));
+		} catch(e){;}
+		cpedit(arr);
 	}
 	else {
-	xhr = new XMLHttpRequest();
-	xhr.onreadystatechange = function() {
+		xhr = new XMLHttpRequest();
+		xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4 && xhr.status == 200) {
-			var arr = JSON.parse(xhr.responseText);
-			cpedit();
+			var arr;
+			try{
+				arr = JSON.parse(xhr.responseText);
+			} catch(e){;}
+			cpedit(arr);
 		}
 	}
 	xhr.open("POST","getStation",false);
 	xhr.setRequestHeader(content,ctype);
-//	xhr.setRequestHeader(cache, priv);
 	xhr.send("idgp=" + id+"&");
 	}
-//	localStorage.clear();
 }
 
+function refreshList() {
+	promptworking("Working.. Please Wait");
+	localStorage.clear();
+	loadStationsList(191);
+	promptworking("");
+}
+
+function clearList() {
+	if (confirm("Warning: This will clear all stations.\n Be sure to save station before.\nClear now?"))
+	{
+		promptworking("Working.. Please Wait");
+		xhr = new XMLHttpRequest();
+		xhr.open("POST","clear",false);
+		xhr.setRequestHeader(content,ctype);
+		xhr.send( "&&");
+		window.setTimeout(refreshList, 10);
+		promptworking("");
+	}
+}	
+
+function downloadStations()
+{
+	var arr;
+	eprogress = document.getElementById('progress');
+	/*var textArea = document.getElementById("my-text-area");
+	var arrayOfLines = textArea.value.split("\n"); // arrayOfLines is array where every element is string of one line*/
+	if (window.File && window.FileReader && window.FileList && window.Blob) {
+		var reader = new FileReader();
+		xhr.onreadystatechange = function() {
+			promptworking("Working.. Please Wait"); // some time to display promptworking
+		}
+		xhr = new XMLHttpRequest();
+		reader.onload = function(e){
+			// Entire file
+			//console.log(this.result);
+			// By lines
+			var lines = this.result.split('\n');
+			for(var line = 0; line < lines.length; line++){				
+//				console.log(lines[line]);
+				try {
+				arr = JSON.parse(lines[line]);
+				} catch (e){;}
+				finally {
+//				console.log("Name="+arr["Name"]);
+					xhr.open("POST","setStation",false);
+					xhr.setRequestHeader(content,ctype);
+					xhr.send("id="+line + "&url="+arr["URL"] +"&name="+ arr["Name"]+ "&file="+arr["File"] + "&port=" + arr["Port"]+"&");
+				}
+			}
+			localStorage.clear();
+//			loadStationsList(191);		
+			promptworking("");
+		};
+		var file = document.getElementById('fileload').files[0];
+		if (file==null) alert("Please select a file");
+		else {
+			promptworking("Working.. Please Wait");
+			xhr.open("POST","clear",false);
+			xhr.setRequestHeader(content,ctype);
+			xhr.send( "&&");
+			reader.readAsText(file);
+		}
+	}	
+}	
 function loadStations(page) {
 	var new_tbody = document.createElement('tbody');
 	var id = 16 * (page-1);
@@ -209,20 +342,26 @@ function loadStations(page) {
 					td.innerHTML = "<a href=\"#\" onClick=\"editStation("+id+")\">Edit</a>";
 					tr.appendChild(td);
 					new_tbody.appendChild(tr);
-}	
+	}	
 	for(id; id < 16*page; id++) {
 		idstr = id.toString();		
 		if (localStorage.getItem(idstr) != null)
 		{	
-			var arr = JSON.parse(localStorage.getItem(idstr));
-			cploadStations(id,arr);
+			var arr ;
+			try{
+				arr = JSON.parse(localStorage.getItem(idstr));
+			} catch (e){;}			
+				cploadStations(id,arr);
 		}
 		else
 		{
 			xhr = new XMLHttpRequest();
 			xhr.onreadystatechange = function() {
 				if (xhr.readyState == 4 && xhr.status == 200) {
-					var arr = JSON.parse(xhr.responseText);
+					var arr;
+					try{
+						arr = JSON.parse(xhr.responseText);
+					} catch (e){;}	
 					localStorage.setItem(idstr,xhr.responseText);
 					cploadStations(id,arr);
 				}
@@ -256,7 +395,10 @@ function loadStationsList(max) {
 		idstr = id.toString();
 		if (localStorage.getItem(idstr) != null)
 		{	
-			var arr = JSON.parse(localStorage.getItem(idstr));
+			var arr;
+			try {
+				arr = JSON.parse(localStorage.getItem(idstr));
+			} catch(e){;}
 			foundNull = cploadStationsList(id,arr);
 		}
 		else
@@ -264,12 +406,15 @@ function loadStationsList(max) {
 			xhr = new XMLHttpRequest();
 			xhr.onreadystatechange = function() {			
 				if (xhr.readyState == 4 && xhr.status == 200) {
-					var arr = JSON.parse(xhr.responseText);
+					var arr;
+					try {
+						arr = JSON.parse(xhr.responseText);
+					} catch(e){;}
 					localStorage.setItem(idstr,xhr.responseText);
 					foundNull = cploadStationsList(id,arr);
 				}
 			}
-			xhr.open("POST","getStation",true);
+			xhr.open("POST","getStation",false);
 			xhr.setRequestHeader(content,ctype);
 			xhr.send("idgp=" + id+"&");
 		}
@@ -304,9 +449,9 @@ function setMainHeight(name) {
 	document.getElementById("MAIN").style.height = h;
 }
 
-//document.addEventListener("load", 	refresh(););
 document.addEventListener("DOMContentLoaded", function() {
 	document.getElementById("tab1").addEventListener("click", function() {
+			refresh();
 			setMainHeight("tab-content1");
 		});
 	document.getElementById("tab2").addEventListener("click", function() {
@@ -314,11 +459,13 @@ document.addEventListener("DOMContentLoaded", function() {
 			setMainHeight("tab-content2");
 		});
 	document.getElementById("tab3").addEventListener("click", function() {
+			wifi(0) ;
 			setMainHeight("tab-content3");
 		});
 
 	loadStationsList(191);
 	refresh();
+	wifi(0) ;
 	setMainHeight("tab-content1");
-	window.setInterval(refresh,10000);
+	window.setInterval(refresh,5000);
 });

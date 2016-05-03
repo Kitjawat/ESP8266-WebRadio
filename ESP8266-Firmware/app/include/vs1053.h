@@ -95,7 +95,9 @@ void	VS1053_BassUp(uint8_t xdB);
 void	VS1053_BassDown(uint8_t xdB);
 void	VS1053_SetBassFreq(uint8_t xTenHz);
 uint8_t	VS1053_GetBassFreq(void);
-
+// Spacial
+uint8_t	VS1053_GetSpatial();
+void VS1053_SetSpatial(uint8_t num);
 //private functions
 void SPIPutChar(uint8_t outB);
 uint8_t SPIGetChar();

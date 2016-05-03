@@ -5,6 +5,7 @@
 #define METADATA 9
 #define METAINT 8
 #define ICY_HEADERS_COUNT 9
+#define ICY_HEADER_COUNT 10
 struct icyHeader
 {
 	union
@@ -22,7 +23,7 @@ struct icyHeader
 			int metaint;
 			char* metadata;
 		} single;
-		char* mArr[ICY_HEADERS_COUNT];
+		char* mArr[ICY_HEADER_COUNT];
 	} members;
 };
 

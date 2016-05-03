@@ -41,7 +41,9 @@ ICACHE_FLASH_ATTR void VS1053_HW_init(){
 
 ICACHE_FLASH_ATTR void VS1053_SPI_SpeedUp()
 {
-	spi_clock(HSPI, 4, 3); //10MHz
+//	spi_clock(HSPI, 4, 2); //10MHz
+	spi_clock(HSPI, 4, 3); //6.66MHz
+//	spi_clock(HSPI, 3, 3); //8.88MHz
 }
 
 ICACHE_FLASH_ATTR void VS1053_SPI_SpeedDown() {
@@ -83,8 +85,9 @@ ICACHE_FLASH_ATTR void SDI_ChipSelect(uint8_t State){
 }
 
 ICACHE_FLASH_ATTR uint8_t VS1053_checkDREQ() {
-	if(PIN_IN & (1<<DREQ_PIN)) return 1;
-	else return 0;
+	return (PIN_IN & (1<<DREQ_PIN));
+/*	if(PIN_IN & (1<<DREQ_PIN)) return 1;
+	else return 0;*/
 }
 
 ICACHE_FLASH_ATTR void VS1053_SineTest(){

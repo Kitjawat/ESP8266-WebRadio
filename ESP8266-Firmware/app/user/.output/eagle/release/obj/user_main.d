@@ -67,10 +67,12 @@
  ../../include/espressif/esp8266/uart_register.h \
  ../../include/espressif/smartconfig.h \
  ../../include/espressif/spi_flash.h ../../include/espressif/pwm.h \
- ../../include/freertos/semphr.h ../../include/freertos/queue.h \
- ../include/el_uart.h ../../include/freertos/queue.h \
- ../../include/lwip/lwip/sockets.h ../../include/lwip/ipv4/lwip/inet.h \
- ../../include/lwip/ipv6/lwip/inet6.h ../../include/lwip/lwip/dns.h \
- ../../include/lwip/lwip/err.h ../../include/lwip/lwip/netdb.h \
- ../include/interface.h ../include/webserver.h ../include/webclient.h \
- ../include/vs1053.h ../include/eeprom.h
+ ../../include/espressif/esp_softap.h ../../include/espressif/esp_wifi.h \
+ ../../include/espressif/esp_system.h ../../include/freertos/semphr.h \
+ ../../include/freertos/queue.h ../include/el_uart.h \
+ ../../include/freertos/queue.h ../../include/lwip/lwip/sockets.h \
+ ../../include/lwip/ipv4/lwip/inet.h ../../include/lwip/ipv6/lwip/inet6.h \
+ ../../include/lwip/lwip/dns.h ../../include/lwip/lwip/err.h \
+ ../../include/lwip/lwip/netdb.h ../include/interface.h \
+ ../include/webserver.h ../include/webclient.h ../include/vs1053.h \
+ ../include/eeprom.h

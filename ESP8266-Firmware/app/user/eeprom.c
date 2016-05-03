@@ -8,7 +8,7 @@
 #define ICACHE_RAM_ATTR __attribute__((section(".iram0.text")))
 
 #define EEPROM_START	0x3F0000 // Last 64k of flash (32Mbits or 4 MBytes)
-#define EEPROM_SIZE		0xBFFF
+#define EEPROM_SIZE		0xBFFF	 // until xC000 (48k) espressif take the end
 
 uint32_t eebuf[1024];
 
@@ -74,13 +74,22 @@ int result;
 ICACHE_FLASH_ATTR void eeEraseAll() {
 	uint8_t* buffer = malloc(4096);
 	int i;
-	for(i=0; i<4096; i++) buffer[i] = '\0';
+	for(i=0; i<4096; i++) buffer[i] = 0;
 	for(i=0; i<EEPROM_SIZE; i+=4096) {
 		eeSetData(i, buffer, 4096);
 	}
 	free(buffer);
 }
-
+ICACHE_FLASH_ATTR void eeEraseStations() {
+	uint8_t* buffer = malloc(256);
+	int i,j;
+	for(i=0; i<256; i++) buffer[i] = 0;
+	for(j=0; j<192; j++){
+		eeSetData((j+1)*256, buffer, 256);
+		vTaskDelay(1);
+	}
+	free(buffer);
+}
 ICACHE_FLASH_ATTR void saveStation(struct shoutcast_info *station, uint8_t position) {
 	eeSetData((position+1)*256, station, 256);
 }

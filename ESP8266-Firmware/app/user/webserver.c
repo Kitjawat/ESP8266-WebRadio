@@ -6,12 +6,15 @@
 #include "lwip/opt.h"
 #include "lwip/arch.h"
 #include "lwip/api.h"
-
+#include "esp_common.h"
+#include "esp_softap.h"
+#include "esp_wifi.h"
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
 #include "flash.h"
 #include "eeprom.h"
+#include "interface.h"
 
 ICACHE_FLASH_ATTR char* str_replace ( char *string, const char *substr, const char *replacement, int length ){
   char *tok = NULL;
@@ -66,46 +69,45 @@ ICACHE_FLASH_ATTR struct servFile* findFile(char* name)
 
 ICACHE_FLASH_ATTR void serveFile(char* name, int conn)
 {
+#define PART 2048
 	int length;
+	int progress,part;
 	char buf[140];
 	char *content;
-
 	struct servFile* f = findFile(name);
 //	printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
 	if(f != NULL)
 	{
 		length = f->size;
 		content = f->content;
+		progress = 0;
 	}
 	else length = 0;
 //	printf("serveFile %s. Length: %d\n",name,length);	
 	if(length > 0)
 	{
 		char *con = NULL;
-		while(con == NULL)
+		con = (char*)malloc((PART+1)*sizeof(char));
+		if(con == NULL)
 		{
-           con = (char*)malloc(length*sizeof(char));
-			if ( con == NULL )
-			{
-				int i = 0;
-				do { 
-				i++;		
-				printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
-				vTaskDelay(10);
-				printf("servfile malloc fails for %d\n",length*sizeof(char) );
-				}
-				while (i<2);
-				if (i >=2) {
-					sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n", (f!=NULL ? f->type : "text/plain"), 0);
-					write(conn, buf, strlen(buf));
-					return ;
-				}
-			}	
-		} 			
-		flashRead(con, (uint32_t)content, length);
+				sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n", (f!=NULL ? f->type : "text/plain"), 0);
+				write(conn, buf, strlen(buf));
+				return ;
+		}	
+	
 		sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type: %s\r\nContent-Length: %d\r\nConnection: close\r\n\r\n", (f!=NULL ? f->type : "text/plain"), length);
 		write(conn, buf, strlen(buf));
-		write(conn, con, length);
+
+		progress = length;
+		part = PART;
+		if (progress <= part) part = progress;
+		while (progress > 0) {
+			flashRead(con, (uint32_t)content, part);
+			write(conn, con, part);
+			content += part;
+			progress -= part;
+			if (progress <= part) part = progress;
+		} 
 		free(con);
 	}
 	else
@@ -141,6 +143,8 @@ ICACHE_FLASH_ATTR void respOk(int conn)
 ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int conn) {
 //	printf("HandlePost %s\n",name);
 	char* head = NULL;
+	bool changed = false;
+	struct device_settings *device;
 	if(strcmp(name, "/instant_play") == 0) {
 		if(data_size > 0) {
 			char* url = getParameterFromResponse("url=", data, data_size);
@@ -169,11 +173,15 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 		if(data_size > 0) {
 			char* vol = getParameterFromResponse("vol=", data, data_size);
 //			printf("/sounvol vol: %s num:%d \n",vol, atoi(vol));
+			device = getDeviceSettings();
+			changed = false;
 			if(vol) {
 				VS1053_SetVolume(254-atoi(vol));
+				if (device->vol != (254-atoi(vol))){ device->vol = (254-atoi(vol)); changed = true;}
 				free(vol);
 			}
-		}
+			if (changed) saveDeviceSettings(device);
+			free(device);		}
 	} else if(strcmp(name, "/sound") == 0) {
 		if(data_size > 0) {
 			char* bass = getParameterFromResponse("bass=", data, data_size);
@@ -181,26 +189,35 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			char* bassfreq = getParameterFromResponse("bassfreq=", data, data_size);
 			char* treblefreq = getParameterFromResponse("treblefreq=", data, data_size);
 			char* spacial = getParameterFromResponse("spacial=", data, data_size);
+			device = getDeviceSettings();
+			changed = false;
 			if(bass) {
 				VS1053_SetBass(atoi(bass));
+				if (device->bass != atoi(bass)){ device->bass = atoi(bass); changed = true;}
 				free(bass);
 			}
 			if(treble) {
 				VS1053_SetTreble(atoi(treble));
+				if (device->treble != atoi(treble)){ device->treble = atoi(treble); changed = true;}
 				free(treble);
 			}
 			if(bassfreq) {
 				VS1053_SetBassFreq(atoi(bassfreq));
+				if (device->freqbass != atoi(bassfreq)){ device->freqbass = atoi(bassfreq); changed = true;}
 				free(bassfreq);
 			}
 			if(treblefreq) {
 				VS1053_SetTrebleFreq(atoi(treblefreq));
+				if (device->freqtreble != atoi(treblefreq)){ device->freqtreble = atoi(treblefreq); changed = true;}
 				free(treblefreq);
 			}
 			if(spacial) {
 				VS1053_SetSpatial(atoi(spacial));
+				if (device->spacial != atoi(spacial)){ device->spacial = atoi(spacial); changed = true;}
 				free(spacial);
 			}
+			if (changed) saveDeviceSettings(device);
+			free(device);
 		}
 	} else if(strcmp(name, "/getStation") == 0) {
 		if(data_size > 0) {
@@ -241,18 +258,23 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			char* port = getParameterFromResponse("port=", data, data_size);
 			if(id && url && file && name && port) {
 				struct shoutcast_info *si = malloc(sizeof(struct shoutcast_info));
-				strcpy(si->domain, url);
-				strcpy(si->file, file);
-				strcpy(si->name, name);
-				si->port = atoi(port);
-				saveStation(si, atoi(id));
-				free(si);
+				if (si != NULL)
+				{	
+					char* bsi = (char*)si;
+					int i; for (i=0;i< sizeof(struct shoutcast_info);i++) bsi[i]=0; //clean 
+					strcpy(si->domain, url);
+					strcpy(si->file, file);
+					strcpy(si->name, name);
+					si->port = atoi(port);
+					saveStation(si, atoi(id));
+					free(si);
+				} else printf("setStation SI malloc failed\n");
 			} 
-			free(id);
-			free(url);
-			free(file);
-			free(name);
 			free(port);
+			free(name);
+			free(file);
+			free(url);
+			free(id);
 		}
 	} else if(strcmp(name, "/play") == 0) {
 		if(data_size > 0) {
@@ -324,7 +346,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 		char *buf = malloc( json_length + 75);
 		if (buf == NULL)
 		{	
-			printf("getStation malloc fails\n");
+			printf("post icy malloc fails\n");
 			respOk(conn);
 		}
 		else {				
@@ -344,7 +366,77 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			free(buf);
 		}
 		return;
-	}	
+	} else if(strcmp(name, "/wifi") == 0)	
+	{
+		bool val = false;
+		char tmpip[16],tmpmsk[16],tmpgw[16];
+		struct device_settings *device;
+		device = getDeviceSettings();
+		
+		uint8_t a,b,c,d;
+				
+		if(data_size > 0) {
+			char* valid = getParameterFromResponse("valid=", data, data_size);
+			if(valid != NULL) if (strcmp(valid,"1")==0) val = true;
+			char* ssid = getParameterFromResponse("ssid=", data, data_size);
+			char* pasw = getParameterFromResponse("pasw=", data, data_size);
+			char* aip = getParameterFromResponse("ip=", data, data_size);
+			char* amsk = getParameterFromResponse("msk=", data, data_size);
+			char* agw = getParameterFromResponse("gw=", data, data_size);
+			char* adhcp = getParameterFromResponse("dhcp=", data, data_size);
+//			printf("wifi received  valid:%s,val:%d, ssid:%s, pasw:%s, aip:%s, amsk:%s, agw:%s, adhcp:%s \n",valid,val,ssid,pasw,aip,amsk,agw,adhcp);
+			if (val) {
+				ip_addr_t val;
+				ipaddr_aton(aip, &val);
+				memcpy(device->ipAddr,&val,sizeof(uint32_t));
+				ipaddr_aton(amsk, &val);
+				memcpy(device->mask,&val,sizeof(uint32_t));
+				ipaddr_aton(agw, &val);
+				memcpy(device->gate,&val,sizeof(uint32_t));
+				if (adhcp!= NULL) if (strlen(adhcp)!=0) if (strcmp(adhcp,"true")==0)device->dhcpEn = 1; else device->dhcpEn = 0;
+				strcpy(device->ssid,(ssid==NULL)?"":ssid);
+				strcpy(device->pass,(pasw==NULL)?"":pasw);
+				saveDeviceSettings(device);		
+			}
+			device = getDeviceSettings();
+			int json_length ;
+			json_length =56+
+			strlen(device->ssid) +
+			strlen(device->pass) +
+			sprintf(tmpip,"%d.%d.%d.%d",device->ipAddr[0], device->ipAddr[1],device->ipAddr[2], device->ipAddr[3])+
+			sprintf(tmpmsk,"%d.%d.%d.%d",device->mask[0], device->mask[1],device->mask[2], device->mask[3])+
+			sprintf(tmpgw,"%d.%d.%d.%d",device->gate[0], device->gate[1],device->gate[2], device->gate[3])+
+			sprintf(adhcp,"%d",device->dhcpEn);
+//			printf("wifi3 received  ssid:%s, pasw:%s, aip:%s, amsk:%s, agw:%s, adhcp:%s \n",ssid,pasw,aip,amsk,agw,adhcp);
+
+			char *buf = malloc( json_length + 75);			
+			if (buf == NULL)
+			{	
+				printf("post wifi malloc fails\n");
+				respOk(conn);
+			}
+			else {				
+				sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"ssid\":\"%s\",\"pasw\":\"%s\",\"ip\":\"%s\",\"msk\":\"%s\",\"gw\":\"%s\",\"dhcp\":\"%s\"}",
+				json_length,
+				device->ssid,device->pass,tmpip,tmpmsk,tmpgw,adhcp	);
+//				printf("wifi Buf: %s\n",buf);
+				write(conn, buf, strlen(buf));
+				free(buf);
+			}
+			if (ssid) free(ssid); if (pasw) free(pasw); if (aip) free(aip);if (amsk) free(amsk);if (agw) free(agw);
+			if (valid) free(valid);if (adhcp) free(adhcp);
+		}	
+		free(device);
+		if (val){
+		vTaskDelay(200);		
+		system_restart_enhance(SYS_BOOT_NORMAL_BIN, system_get_userbin_addr());	
+		}	
+		
+		return;
+	} else if(strcmp(name, "/clear") == 0)	
+	{
+		eeEraseStations();	//clear all stations
+	}
 	respOk(conn);
 }
 
@@ -424,6 +516,8 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 		}
 		free(buf);
 	}
+	shutdown(client_sock,SHUT_RDWR);
+	vTaskDelay(10);
 	close(client_sock);
 //	printf("Client exit\n");
  	xSemaphoreGive(semclient);	
@@ -433,7 +527,7 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 	struct sockaddr_in server_addr, client_addr;
 	int server_sock, client_sock;
 	socklen_t sin_size;
-    semclient = xSemaphoreCreateCounting(  1,  1 ); ;
+    semclient = xSemaphoreCreateCounting(  2,  2 ); ;
 	
 	while (1) {
         bzero(&server_addr, sizeof(struct sockaddr_in));
@@ -471,7 +565,7 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 				{
 					while (1) 
 					{
-						if (xSemaphoreTake(semclient,portMAX_DELAY)){ 
+						if (xSemaphoreTake(semclient,0x1000)){ 
 							xTaskCreate( serverclientTask,
 							"t10",
 							512,
@@ -479,7 +573,7 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 							4,
 							NULL );
 							break;
-						}
+						} else printf("no room for client\n");
 					}
 				}			
             }
