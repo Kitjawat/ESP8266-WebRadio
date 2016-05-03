@@ -17,8 +17,8 @@ First step, Final release done.
 - ...
 
 #### Loading the esp8266
-- https://github.com/karawin/ESP8266-WebRadio/ESP8266-Firmware/bin/boot_v1.5.bin at 0x0000
-- https://github.com/karawin/ESP8266-WebRadio/ESP8266-Firmware/bin/upgrade\user1.4096.new.6.bin at 0x1000
+- https://github.com/karawin/ESP8266-WebRadio/blob/master/ESP8266-Firmware/bin/boot_v1.5.bin at 0x0000
+- https://github.com/karawin/ESP8266-WebRadio/blob/master/ESP8266-Firmware/bin/upgrade/user1.4096.new.6.bin at 0x1000
 
 #### First use
 - If the acces point of your router is not known, the webradio inits itself as an AP. Connect your wifi to the ssid "WifiWebRadio",  
@@ -27,7 +27,7 @@ First step, Final release done.
 - Validate. The equipment restart to the new configuration. Connect your wifi to your AP and browse to the ip given in configuration.
 - Congratulation, you can edit your own station list. Dont forget to save your stations list in case of problem or for new equipments.
 - if the AP is already know by the esp8266, the default ip at the first start is 192.168.1.254
-- a sample of stations list is on https://github.com/karawin/ESP8266-WebRadio/ESP8266-Firmware/WebStations.txt . Can be uploaded via the web page.
+- a sample of stations list is on https://github.com/karawin/ESP8266-WebRadio/blob/master/ESP8266-Firmware/WebStations.txt . Can be uploaded via the web page.        
 
 #### Feedback
 Please tell me if you succeded or something more can be done, thanks.<br/>
