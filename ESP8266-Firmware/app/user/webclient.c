@@ -138,9 +138,12 @@ ICACHE_FLASH_ATTR bool clientParsePlaylist(char* s)
 		i++;
 		while ((str[i] != '/')&&(str[i] != 0x0a)&&(str[i] != 0x0d)) {port[j] = str[i]; i++ ;j++;}
 	}
-	j = 0;	
-	while ((str[i] != 0x0a)&&(str[i] != 0x0d)&&(str[i] != 0)&&(str[i] != '"')&&(str[i] != '<')) {path[j] = str[i]; i++; j++;} //path
-	path[j] = 0;
+	j = 0;
+	if ((str[i] != 0x0a)&&(str[i] != 0x0d)&&(str[i] != 0)&&(str[i] != '"')&&(str[i] != '<'))
+	{	
+	  while ((str[i] != 0x0a)&&(str[i] != 0x0d)&&(str[i] != 0)&&(str[i] != '"')&&(str[i] != '<')) {path[j] = str[i]; i++; j++;}
+	  path[j] = 0;
+	}
 
 	if (strncmp(url,"localhost",9)!=0) clientSetURL(url);
 	clientSetPath(path);
