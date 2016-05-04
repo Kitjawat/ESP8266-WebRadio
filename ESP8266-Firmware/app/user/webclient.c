@@ -229,6 +229,7 @@ ICACHE_FLASH_ATTR void clearHeaders()
 			header.members.mArr[header_num][0] = 0;				
 		}
 	}
+	header.members.mArr[METAINT] = 0;
 }
 		
 ICACHE_FLASH_ATTR void clientParseHeader(char* s)
@@ -400,7 +401,7 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 		- Metadata processing
 		- Buffer underflow handling (?)
 	*/
-	static int metad = -1;
+	static int metad ;
 	uint16_t l ;
 	char* t1;
 //	char* buf;
@@ -420,6 +421,8 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 	break;
 	case C_HEADER:
 	case C_HEADER1:  // not ended
+		clearHeaders();
+		metad = -1;
 		t1 = strstr(pdata, "302 "); 
 		if (t1 ==NULL) t1 = strstr(pdata, "301 "); 
 		if (t1 != NULL) { // moved to a new address
@@ -450,8 +453,9 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 	break;
 	default:
 //		 buf = pdata;		
-// -----------		
-		if(len > metad) {
+// -----------	
+		rest = 0;
+		if(((header.members.single.metaint != 0)&&(len > metad))) {
 			l = pdata[metad]*16;
 			rest = len - metad  -l -1;
 			if (l !=0)
@@ -477,8 +481,8 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 				clientSaveMetadata(pdata,0-rest,true);
 				/*buf =pdata+rest;*/ len +=rest;metad += rest; rest = 0;
 			}	
-			metad -= len;
-//			printf("len = %d, metad = %d\n",len,metad);
+			if (header.members.single.metaint != 0) metad -= len;
+//			printf("len = %d, metad = %d  metaint= %d\n",len,metad,header.members.single.metaint);
 			while(getBufferFree() < len) {vTaskDelay(1); /*printf("-");*/}
 			if (len >0) bufferWrite(pdata+rest, len);	
 		}
