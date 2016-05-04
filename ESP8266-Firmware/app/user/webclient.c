@@ -114,29 +114,33 @@ ICACHE_FLASH_ATTR struct icyHeader* clientGetHeader()
 	
 ICACHE_FLASH_ATTR bool clientParsePlaylist(char* s)
 {
-  char* str = strstr(s,"http://");
+  char* str; 
   char path[80] = "/";
   char url[80]; 
   char port[5] = "80";
+  int remove;
   int i = 0; int j = 0;
-
+  str = strstr(s,"<location>http://");  //for xspf
+  if (str != NULL) remove = 17;
+  if (str ==NULL) 
+  {	  
+	str = strstr(s,"http://");
+	if (str != NULL) remove = 7;
+  }
   if (str != NULL)
   {
-	str +=7; //skip http
+	str += remove; //skip http://
 	while ((str[i] != '/')&&(str[i] != ':')&&(str[i] != 0x0a)&&(str[i] != 0x0d)) {url[j] = str[i]; i++ ;j++;}
 	url[j] = 0;
 	j = 0;
-	if (str[i] == ':')
+	if (str[i] == ':')  //port
 	{
 		i++;
 		while ((str[i] != '/')&&(str[i] != 0x0a)&&(str[i] != 0x0d)) {port[j] = str[i]; i++ ;j++;}
 	}
-	j = 0;
-	if ((str[i] != 0x0a)&&(str[i] != 0x0d))
-	{	
-	  while ((str[i] != 0x0a)&&(str[i] != 0x0d)&&(str[i] != 0)&&(str[i] != '"')) {path[j] = str[i]; i++; j++;}
-	  path[j] = 0;
-	}
+	j = 0;	
+	while ((str[i] != 0x0a)&&(str[i] != 0x0d)&&(str[i] != 0)&&(str[i] != '"')&&(str[i] != '<')) {path[j] = str[i]; i++; j++;} //path
+	path[j] = 0;
 
 	if (strncmp(url,"localhost",9)!=0) clientSetURL(url);
 	clientSetPath(path);
@@ -551,7 +555,8 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 				bzero(buffer, RECEIVE);
 				
 				char *t0 = strstr(clientPath, ".m3u");
-				if (t0 == NULL)  t0 = strstr(clientPath, ".pls");			
+				if (t0 == NULL)  t0 = strstr(clientPath, ".pls");
+				if (t0 == NULL)  t0 = strstr(clientPath, ".xspf");				
 				if (t0 != NULL)  // a playlist asked
 				{
 				  cstatus = C_PLAYLIST;
