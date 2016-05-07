@@ -9,6 +9,7 @@
 
 #define EEPROM_START	0x3F0000 // Last 64k of flash (32Mbits or 4 MBytes)
 #define EEPROM_SIZE		0xBFFF	 // until xC000 (48k) espressif take the end
+#define NBSTATIONS		192
 
 uint32_t eebuf[1024];
 
@@ -84,17 +85,19 @@ ICACHE_FLASH_ATTR void eeEraseStations() {
 	uint8_t* buffer = malloc(256);
 	int i,j;
 	for(i=0; i<256; i++) buffer[i] = 0;
-	for(j=0; j<192; j++){
+	for(j=0; j<NBSTATIONS; j++){
 		eeSetData((j+1)*256, buffer, 256);
-		vTaskDelay(1);
+		vTaskDelay(1); // avoid watchdog
 	}
 	free(buffer);
 }
 ICACHE_FLASH_ATTR void saveStation(struct shoutcast_info *station, uint8_t position) {
+	if (position > NBSTATIONS-1) {printf("saveStation fails position=%d\n",position); return;}
 	eeSetData((position+1)*256, station, 256);
 }
 
 ICACHE_FLASH_ATTR struct shoutcast_info* getStation(uint8_t position) {
+	if (position > NBSTATIONS-1) {printf("getStation fails position=%d\n",position); return NULL;}
 	uint8_t* buffer = malloc(256);
 	while (buffer== NULL)
 	{
@@ -116,6 +119,7 @@ ICACHE_FLASH_ATTR struct shoutcast_info* getStation(uint8_t position) {
 }
 
 ICACHE_FLASH_ATTR void saveDeviceSettings(struct device_settings *settings) {
+	if (settings == NULL) { printf("saveDeviceSetting fails: settings null\n");return;}
 	eeSetData(0, settings, 256);
 }
 
@@ -124,5 +128,5 @@ ICACHE_FLASH_ATTR struct device_settings* getDeviceSettings() {
 	if(buffer) {
 		eeGetData(0, buffer, 256);
 		return (struct device_settings*)buffer;
-	} else return NULL;
+	} else { printf("getDeviceSetting fails: malloc\n");return NULL;}
 }

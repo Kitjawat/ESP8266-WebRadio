@@ -222,13 +222,16 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 	} else if(strcmp(name, "/getStation") == 0) {
 		if(data_size > 0) {
 			char* id = getParameterFromResponse("idgp=", data, data_size);
-			if(id) {
+			if ((id) && (atoi(id) >=0) && (atoi(id) < 192)) {
 				char ibuf [6];	
 				char *buf;
 				int i;
 				for(i = 0; i<sizeof(ibuf); i++) ibuf[i] = 0;
 				struct shoutcast_info* si;
 				si = getStation(atoi(id));
+				if (strlen(si->domain) > sizeof(si->domain)) si->domain[sizeof(si->domain)-1] = 0; //truncate if any (rom crash)
+				if (strlen(si->file) > sizeof(si->file)) si->file[sizeof(si->file)-1] = 0; //truncate if any (rom crash)
+				if (strlen(si->name) > sizeof(si->name)) si->name[sizeof(si->name)-1] = 0; //truncate if any (rom crash)
 				sprintf(ibuf, "%d", si->port);
 				int json_length = strlen(si->domain) + strlen(si->file) + strlen(si->name) + strlen(ibuf) + 40;
 				buf = malloc(json_length + 75);
@@ -247,7 +250,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 				free(si);
 				free(id);
 				return;
-			} 
+			} else printf("getstation, no id or Wrong id %d\n",atoi(id));
 		}
 	} else if(strcmp(name, "/setStation") == 0) {
 		if(data_size > 0) {
@@ -258,17 +261,20 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			char* port = getParameterFromResponse("port=", data, data_size);
 			if(id && url && file && name && port) {
 				struct shoutcast_info *si = malloc(sizeof(struct shoutcast_info));
-				if (si != NULL)
+				if ((si != NULL) && (atoi(id) >=0) && (atoi(id) < 192))
 				{	
 					char* bsi = (char*)si;
 					int i; for (i=0;i< sizeof(struct shoutcast_info);i++) bsi[i]=0; //clean 
+					if (strlen(url) > sizeof(si->domain)) url[sizeof(si->domain)-1] = 0; //truncate if any
 					strcpy(si->domain, url);
+					if (strlen(file) > sizeof(si->file)) url[sizeof(si->file)-1] = 0; //truncate if any
 					strcpy(si->file, file);
+					if (strlen(name) > sizeof(si->name)) url[sizeof(si->name)-1] = 0; //truncate if any
 					strcpy(si->name, name);
 					si->port = atoi(port);
 					saveStation(si, atoi(id));
 					free(si);
-				} else printf("setStation SI malloc failed\n");
+				} else printf("setStation SI malloc failed or illegal id %d\n",atoi(id));
 			} 
 			free(port);
 			free(name);

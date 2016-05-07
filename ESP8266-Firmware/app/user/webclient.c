@@ -55,24 +55,26 @@ ICACHE_FLASH_ATTR uint16_t getBufferFilled() {
 }
 
 ICACHE_FLASH_ATTR uint16_t bufferWrite(uint8_t *data, uint16_t size) {
-	uint16_t s = size, i = 0;
-	for(i=0; i<s; i++) {
+//	uint16_t s = size;
+	uint16_t i = 0;
+	for(i=0; i<size; i++) {
 		if(getBufferFree() == 0) { return i;}
-		buffer[wptr] = data[i];
+		buffer[wptr++] = data[i];
 		if(bempty) bempty = 0;
-		wptr++;
+//		wptr++;
 		if(wptr == BUFFER_SIZE) wptr = 0;
 	}
-	return s;
+	return size;
 }
 
 ICACHE_FLASH_ATTR uint16_t bufferRead(uint8_t *data, uint16_t size) {
-	uint16_t s = size, i = 0;
+	uint16_t s = size;
+	uint16_t i = 0;
 	if(s > getBufferFilled()) s = getBufferFilled();
 	for (i = 0; i < s; i++) {
-		if(getBufferFilled() == 0) { return i;}
-		data[i] = buffer[rptr];
-		rptr++;
+		if((BUFFER_SIZE - getBufferFree()) == 0) { return i;}
+		data[i] = buffer[rptr++];
+//		rptr++;
 		if(rptr == BUFFER_SIZE) rptr = 0;
 		if(rptr == wptr) bempty = 1;
 	}
@@ -239,10 +241,11 @@ ICACHE_FLASH_ATTR void clearHeaders()
 	header.members.mArr[METAINT] = 0;
 }
 		
-ICACHE_FLASH_ATTR void clientParseHeader(char* s)
+ICACHE_FLASH_ATTR bool clientParseHeader(char* s)
 {
 	// icy-notice1 icy-notice2 icy-name icy-genre icy-url icy-br
 	uint8_t header_num;
+	bool ret = false;
 //	printf("ParseHeader: %s\n",s);
 	xSemaphoreTake(sHeader,portMAX_DELAY);
 	if ((cstatus != C_HEADER1)&& (cstatus != C_PLAYLIST))// not ended. dont clear
@@ -281,6 +284,7 @@ ICACHE_FLASH_ATTR void clientParseHeader(char* s)
 //						printf("header before addr:0x%x  cont:%s\n",header.members.mArr[header_num],header.members.mArr[header_num]);
 						header.members.mArr[header_num] = stringify(header.members.mArr[header_num],&headerlen[header_num]);
 //						printf("header after  addr:0x%x  cont:%s\n",header.members.mArr[header_num],header.members.mArr[header_num]);
+						ret = true;
 					}
 				}
 				else // Numerical header field
@@ -297,7 +301,8 @@ ICACHE_FLASH_ATTR void clientParseHeader(char* s)
 						for(i = 0; i<len+1; i++) metaint[i] = 0;
 						strncpy(metaint, t, len);
 						header.members.single.metaint = atoi(metaint);
-						printf("MetaInt= %s, Metaint= %d\n",metaint,header.members.single.metaint);
+//						printf("MetaInt= %s, Metaint= %d\n",metaint,header.members.single.metaint);
+						ret = true;
 					}
 //			printf("icy: %s: %d\n",icyHeaders[header_num],header.members.single.metaint);					
 				}
@@ -305,51 +310,9 @@ ICACHE_FLASH_ATTR void clientParseHeader(char* s)
 		}
 	}
 	xSemaphoreGive(sHeader);
+	return ret;
 }
-/*
-ICACHE_FLASH_ATTR uint16_t clientProcessMetadata(char* s, uint16_t size)
-{
-	uint16_t processed = 0;
-	if(metasize == 0) { metasize = s[0]*16; processed = 1; }
-	if(metasize == 0) return 1; // THERE IS NO METADATA
 
-	if(processed == 1) // BEGINNING OF NEW METADATA; PREPARE MEMORY SPACE
-	{
-		if(header.members.single.metadata != NULL) free(header.members.single.metadata);
-		header.members.single.metadata = (char*) malloc((metasize+1) * sizeof(char));
-		if(header.members.single.metadata == NULL)
-		{
-			cstatus = C_DATA;
-			return metasize;
-		}
-		int i;
-		for(i=0; i<metasize+1; i++) header.members.single.metadata[i] = 0;
-	}
-	uint16_t startpos = 0;
-	while(header.members.single.metadata[startpos] != 0) startpos++; // FIND ENDING OF METADATA
-	if((size-processed) >= metasize)
-	{
-		int i;
-		for(i=0; i<metasize; i++) header.members.single.metadata[startpos+i] = s[processed+i];
-		processed += metasize;
-	}
-	else
-	{
-		int i;
-		for(i=0; i<(size-processed); i++) header.members.single.metadata[startpos+i] = s[processed+i];
-		processed += (size-processed);
-		metasize -= (size-processed);
-	}
-	if(metasize == 0) {
-		cstatus = C_DATA; // METADATA READ - BACK TO STREAM DATA
-		// DEBUG
-		printf("\n");
-		printf(header.members.single.metadata);
-	}
-	xSemaphoreGive(sHeader);
-	return processed;
-}
-*/
 ICACHE_FLASH_ATTR void clientSetURL(char* url)
 {
 	int l = strlen(url)+1;
@@ -381,13 +344,11 @@ ICACHE_FLASH_ATTR void clientConnect()
 	cstatus = C_HEADER;
 	metacount = 0;
 	metasize = 0;
-
+printf("ClientConnect\n");
 	//if(netconn_gethostbyname(clientURL, &ipAddress) == ERR_OK) {
 	if(server) free(server);
 	if((server = (struct hostent*)gethostbyname(clientURL))) {
 		xSemaphoreGive(sConnect);
-
-		//connect = 1; // todo: semafor!!!
 	} else {
 		clientDisconnect();
 	}
@@ -411,12 +372,13 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 	static int metad ;
 	uint16_t l ;
 	char* t1;
-//	char* buf;
+	bool  icyfound;
+
+//	if (cstatus != C_DATA){printf("cstatus= %d\n",cstatus);  printf("Byte_list = %s\n",pdata);}
 	switch (cstatus)
 	{
 	case C_PLAYLIST:
  
-//	    printf("Byte_list = %s\n",pdata);
         if (!clientParsePlaylist(pdata)) //need more
 		  cstatus = C_PLAYLIST1;
 		else clientDisconnect();  
@@ -442,17 +404,15 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 			}	
 		}
 		else {
-			clientParseHeader(pdata);
+			icyfound = clientParseHeader(pdata);
 			cstatus = C_HEADER1;
 			if(header.members.single.metaint > 0) 
 				metad = header.members.single.metaint;
 			t1 = strstr(pdata, "\r\n\r\n"); // END OF HEADER
-			if(t1 != NULL) {
-				//processed = t1-pdata + 4;
+//			printf("t1: 0x%x, cstatus: %d, icyfound: %d\n",t1,cstatus,icyfound); 
+			if (t1 != NULL) {
 				cstatus = C_DATA;				
-//				bufferReset();
-				VS1053_flush_cancel(false);
-				VS1053_flush_cancel(true);
+				VS1053_flush_cancel(1);
 				int newlen = len - (t1-pdata) - 4;
 				if(newlen > 0) clientReceiveCallback(NULL, t1+4, newlen);
 			}
@@ -501,8 +461,10 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
     }
 }
 
+#define VSTASKBUF	1280  
+//1344
 ICACHE_FLASH_ATTR void vsTask(void *pvParams) {
-	uint8_t b[1088];
+	uint8_t b[VSTASKBUF];
 
 	struct device_settings *device;
 	register uint16_t size ,s;
@@ -521,7 +483,7 @@ ICACHE_FLASH_ATTR void vsTask(void *pvParams) {
 	free(device);	
 	while(1) {
 		if(playing) {
-			size = bufferRead(b, 1088), s = 0;
+			size = bufferRead(b, VSTASKBUF), s = 0;
 			while(s < size) {
 				s += VS1053_SendMusicBytes(b+s, size-s);
 			} 
@@ -531,10 +493,12 @@ ICACHE_FLASH_ATTR void vsTask(void *pvParams) {
 }
 
 ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
-#define RECEIVE 1048	
+#define RECEIVE 1440
+//1440	720
 	int sockfd, bytes_read;
 	struct sockaddr_in dest;
-	uint8_t buffer[RECEIVE];
+//	uint8_t buffer[RECEIVE];
+	uint8_t* buffer= malloc(RECEIVE);
 	clearHeaders();
 	while(1) {
 		xSemaphoreGive(sConnected);
@@ -565,31 +529,29 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 				  cstatus = C_PLAYLIST;
 				  sprintf(buffer, "GET %s HTTP/1.0\r\nHOST: %s\r\n\r\n", clientPath,clientURL); //ask for the playlist
 			    } 
-				else sprintf(buffer, "GET %s HTTP/1.0\r\nHOST: %s\r\nicy-metadata:1\r\n\r\n", clientPath,clientURL); 
-//				printf("Client Sent:\n%s\n",buffer);
+				else sprintf(buffer, "GET %s HTTP/1.0\r\nHost: %s\r\nicy-metadata:1\r\n\r\n", clientPath,clientURL); 
+//				printf("st:%d, Client Sent:\n%s\n",cstatus,buffer);
 				send(sockfd, buffer, strlen(buffer), 0);
 				
 				xSemaphoreTake(sConnected, 0);
 
 				do
 				{
-//					vTaskDelay(2);
-//					bzero(buffer, sizeof(buffer));
 					bytes_read = recv(sockfd, buffer, RECEIVE, 0);
-	
+//					printf("s:%d   ", bytes_read);
 					if ( bytes_read > 0 ) {
 						clientReceiveCallback(NULL, buffer, bytes_read);
 					}	
 					if(xSemaphoreTake(sDisconnect, 0)) break;
-//					xSemaphoreTake(sConnected, 0);
-//					vTaskDelay(1);
 				}
 				while ( bytes_read > 0 );
 			} else printf("WebClient Socket fails to connect %d\n", errno);
 			/*---Clean up---*/
 			if (bytes_read == 0 ) clientDisconnect(); //jpc
 			bufferReset();
-			VS1053_flush_cancel(false);
+			if (playing) VS1053_flush_cancel(2);
+			playing = 0;
+			VS1053_flush_cancel(0);
 			shutdown(sockfd,SHUT_RDWR);
 			vTaskDelay(10);	
 			close(sockfd);

@@ -41,13 +41,12 @@ ICACHE_FLASH_ATTR void VS1053_HW_init(){
 
 ICACHE_FLASH_ATTR void VS1053_SPI_SpeedUp()
 {
-//	spi_clock(HSPI, 4, 2); //10MHz
-	spi_clock(HSPI, 4, 3); //6.66MHz
+	spi_clock(HSPI, 4, 2); //10MHz
+//	spi_clock(HSPI, 4, 3); //6.66MHz
 //	spi_clock(HSPI, 3, 3); //8.88MHz
 }
 
 ICACHE_FLASH_ATTR void VS1053_SPI_SpeedDown() {
-//	spi_clock(HSPI, 4, 10); //2MHz
 	spi_clock(HSPI, 4, 10); //2MHz
 }
 
@@ -407,7 +406,7 @@ ICACHE_FLASH_ATTR uint16_t VS1053_GetSampleRate(){
 	return (VS1053_ReadRegister(SPI_AUDATA) & 0xFFFE);
 }
 
-ICACHE_FLASH_ATTR void VS1053_flush_cancel(bool mode) {
+ICACHE_FLASH_ATTR void VS1053_flush_cancel(uint8_t mode) {  // 0 only fillbyte  1 before play    2 cancel play
 //  int8_t endFillByte = (int8_t) (Mp3ReadWRAM(para_endFillByte) & 0xFF);
 	VS1053_WriteRegister(SPI_WRAMADDR,MaskAndShiftRight(para_endFillByte,0xFF00,8), (para_endFillByte & 0x00FF) );
 	int8_t endFillByte = (int8_t) VS1053_ReadRegister(SPI_WRAM) & 0xFF;
@@ -415,19 +414,27 @@ ICACHE_FLASH_ATTR void VS1053_flush_cancel(bool mode) {
 	int y;
 	for (y = 0; y < 513; y++) buf[y] = endFillByte;
 
-  if (mode) //set CANCEL
+  if (mode != 0) //set CANCEL
   {
 //Mp3WriteRegister(SCI_MODE, (Mp3ReadRegister(SCI_MODE) | SM_CANCEL));
-  uint16_t spimode = VS1053_ReadRegister(SPI_MODE)| SM_CANCEL;
+	uint16_t spimode = VS1053_ReadRegister(SPI_MODE)| SM_CANCEL;
   // set CANCEL
-  VS1053_WriteRegister(SPI_MODE,MaskAndShiftRight(spimode,0xFF00,8), (spimode & 0x00FF) );
-  // wait CANCEL
-  while (VS1053_ReadRegister(SPI_MODE)& SM_CANCEL)
-  {	  
-	VS1053_SendMusicBytes( buf, 32);
-     vTaskDelay(5);
-	 printf ("Wait CANCEL clear\n");
-  }	 
+	VS1053_WriteRegister(SPI_MODE,MaskAndShiftRight(spimode,0xFF00,8), (spimode & 0x00FF) );
+	// wait CANCEL
+	y = 0;
+	while (VS1053_ReadRegister(SPI_MODE)& SM_CANCEL)
+	{	  
+		if (mode == 1) VS1053_SendMusicBytes( buf, 32); //1
+		else vTaskDelay(2); //2  
+//		printf ("Wait CANCEL clear\n");
+		if (y++ > 513) 
+		{
+			VS1053_SoftwareReset();
+			break;
+		}
+		
+	}	 
+	for ( y = 0; y < 4; y++)	VS1053_SendMusicBytes( buf, 513); // 4*513 = 2052
   } else
   {
 	for ( y = 0; y < 4; y++)	VS1053_SendMusicBytes( buf, 513); // 4*513 = 2052

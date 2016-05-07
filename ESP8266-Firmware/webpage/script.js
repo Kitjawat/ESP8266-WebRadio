@@ -309,8 +309,9 @@ function downloadStations()
 				}
 			}
 			localStorage.clear();
-//			loadStationsList(191);		
+			loadStationsList(191);		
 			promptworking("");
+			window.location.reload(false);
 		};
 		var file = document.getElementById('fileload').files[0];
 		if (file==null) alert("Please select a file");
