@@ -1,6 +1,6 @@
-var content = "Content-type";
-var ctype = "application/x-www-form-urlencoded";
-var cjson = "application/json";
+var content = "Content-type",
+	ctype = "application/x-www-form-urlencoded",
+	cjson = "application/json";
 function chkip($this)
 {
   if ( /^([0-9]+\.){3}[0-9]+$/.test($this.value) ) $this.style.color = "green";
@@ -33,15 +33,15 @@ function promptworking(label) {
 
 function saveTextAsFile()
 {
-	var output = ''; 
+	var output = '',id,textFileAsBlob; 
 	promptworking("Working... Please wait");
 //	for (var key in localStorage) {
-	for (var id =0;id<191 ;id++) {
+	for (id =0;id<191 ;id++) {
 //	output = output+(localStorage[key])+'\n';
 	output = output+(localStorage[id])+'\n';
 	}
-    var textFileAsBlob = new Blob([output], {type:'text/plain'});
-    var downloadLink = document.getElementById('downloadlink');
+    textFileAsBlob = new Blob([output], {type:'text/plain'}),
+     downloadLink = document.getElementById('downloadlink');
 	downloadLink.download = document.getElementById('filesave').value;
 	if (downloadLink.download == "")
 		alert("Please give a file name");
@@ -125,8 +125,8 @@ function onRangeChangeFreqBass($range, $spanid, $mul, $rotate, $nosave) {
 	if( typeof($nosave) == 'undefined' )saveSoundSettings();
 }
 function onRangeChangeSpatial($range, $spanid, $nosave) {
-	var val = document.getElementById($range).value;
-	var label;
+	var val = document.getElementById($range).value,
+	 label;
 	switch (val){
 		case '0': label="Off";break;
 		case '1': label="Minimal";break;
@@ -189,7 +189,7 @@ function playStation() {
 	xhr.send("id=" + select.options[select.options.selectedIndex].id+"&");
 //	window.location.replace("/");
 //    window.location.reload(false);
-	window.setTimeout(refresh, 200);
+	window.setTimeout(refresh, 500);
 }
 function stopStation() {
 	var select = document.getElementById('stationsSelect');
@@ -212,8 +212,8 @@ function saveSoundSettings() {
 			 + "&");
 }
 function saveStation() {
-	var file = document.getElementById('add_path').value;
-	var url = document.getElementById('add_url').value;
+	var file = document.getElementById('add_path').value,
+		url = document.getElementById('add_url').value;
 	if (!(file.substring(0, 1) === "/")) file = "/" + file;
 	url = url.replace(/^https?:\/\//,'');
 	xhr = new XMLHttpRequest();
@@ -221,9 +221,10 @@ function saveStation() {
 	xhr.setRequestHeader(content,ctype);
 	xhr.send("id=" + document.getElementById('add_slot').value + "&url=" + url + "&name=" + document.getElementById('add_name').value + "&file=" + file + "&port=" + document.getElementById('add_port').value+"&");
 	localStorage.setItem(document.getElementById('add_slot').value,"{\"Name\":\""+document.getElementById('add_name').value+"\",\"URL\":\""+url+"\",\"File\":\""+file+"\",\"Port\":\""+document.getElementById('add_port').value+"\"}");
-	window.location.reload(false);
+	window.location.replace("/");
 }
 function editStation(id) {
+	var arr; 
 	function cpedit(arr) {
 			document.getElementById('add_url').value = arr["URL"];
 			document.getElementById('add_name').value = arr["Name"];
@@ -236,7 +237,7 @@ function editStation(id) {
 	idstr = id.toString();			
 	if (localStorage.getItem(idstr) != null)
 	{	
-		var arr; 
+		
 		try{
 			arr = JSON.parse(localStorage.getItem(idstr));
 		} catch(e){;}
@@ -246,7 +247,7 @@ function editStation(id) {
 		xhr = new XMLHttpRequest();
 		xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4 && xhr.status == 200) {
-			var arr;
+//			var arr;
 			try{
 				arr = JSON.parse(xhr.responseText);
 			} catch(e){;}
@@ -281,12 +282,12 @@ function clearList() {
 
 function downloadStations()
 {
-	var arr;
+	var arr,reader,lines,line,file;
 	eprogress = document.getElementById('progress');
 	/*var textArea = document.getElementById("my-text-area");
 	var arrayOfLines = textArea.value.split("\n"); // arrayOfLines is array where every element is string of one line*/
 	if (window.File && window.FileReader && window.FileList && window.Blob) {
-		var reader = new FileReader();
+		reader = new FileReader();
 		xhr.onreadystatechange = function() {
 			promptworking("Working.. Please Wait"); // some time to display promptworking
 		}
@@ -295,8 +296,8 @@ function downloadStations()
 			// Entire file
 			//console.log(this.result);
 			// By lines
-			var lines = this.result.split('\n');
-			for(var line = 0; line < lines.length; line++){				
+			lines = this.result.split('\n');
+			for(line = 0; line < lines.length; line++){				
 //				console.log(lines[line]);
 				try {
 				arr = JSON.parse(lines[line]);
@@ -313,7 +314,7 @@ function downloadStations()
 			promptworking("");
 			window.location.reload(false);
 		};
-		var file = document.getElementById('fileload').files[0];
+		file = document.getElementById('fileload').files[0];
 		if (file==null) alert("Please select a file");
 		else {
 			promptworking("Working.. Please Wait");
@@ -325,21 +326,21 @@ function downloadStations()
 	}	
 }	
 function loadStations(page) {
-	var new_tbody = document.createElement('tbody');
-	var id = 16 * (page-1);
+	var new_tbody = document.createElement('tbody'),
+		id = 16 * (page-1),tr,td,key,arr,old_tbody;
 	function cploadStations(id,arr) {
-					var tr = document.createElement('TR');
-					var td = document.createElement('TD');
+						tr = document.createElement('TR'),
+						td = document.createElement('TD');
 					td.appendChild(document.createTextNode(id + 1));
 					td.style.width = "10%";
 					tr.appendChild(td);
-					for(var key in arr){
-						var td = document.createElement('TD');
+					for(key in arr){
+						td = document.createElement('TD');
 						if(arr[key].length > 64) arr[key] = "Error";
 						td.appendChild(document.createTextNode(arr[key]));
 						tr.appendChild(td);
 					}
-					var td = document.createElement('TD');
+					td = document.createElement('TD');
 					td.innerHTML = "<a href=\"#\" onClick=\"editStation("+id+")\">Edit</a>";
 					tr.appendChild(td);
 					new_tbody.appendChild(tr);
@@ -348,7 +349,7 @@ function loadStations(page) {
 		idstr = id.toString();		
 		if (localStorage.getItem(idstr) != null)
 		{	
-			var arr ;
+//			var arr ;
 			try{
 				arr = JSON.parse(localStorage.getItem(idstr));
 			} catch (e){;}			
@@ -359,7 +360,7 @@ function loadStations(page) {
 			xhr = new XMLHttpRequest();
 			xhr.onreadystatechange = function() {
 				if (xhr.readyState == 4 && xhr.status == 200) {
-					var arr;
+//					var arr;
 					try{
 						arr = JSON.parse(xhr.responseText);
 					} catch (e){;}	
@@ -372,18 +373,18 @@ function loadStations(page) {
 			xhr.send("idgp=" + id+"&");
 		}
 	}
-	var old_tbody = document.getElementById("stationsTable").getElementsByTagName('tbody')[0];
+	old_tbody = document.getElementById("stationsTable").getElementsByTagName('tbody')[0];
 	old_tbody.parentNode.replaceChild(new_tbody, old_tbody);
 	setMainHeight("tab-content2");
 }
 
 function loadStationsList(max) {
-	var foundNull = false;
+	var foundNull = false,id,opt,arr;
 	function cploadStationsList(id,arr) {
-		var foundNull = false;
+		foundNull = false;
 			if(arr["Name"].length > 0) 
 			{
-				var opt = document.createElement('option');
+				opt = document.createElement('option');
 				opt.appendChild(document.createTextNode(arr["Name"]));
 				opt.id = id;
 				document.getElementById("stationsSelect").appendChild(opt);
@@ -391,12 +392,12 @@ function loadStationsList(max) {
 			return foundNull;
 	}		
 	document.getElementById("stationsSelect").disabled = true;
-	for(var id=0; id<max; id++) {
+	for(id=0; id<max; id++) {
 //		if (foundNull) break;
 		idstr = id.toString();
 		if (localStorage.getItem(idstr) != null)
 		{	
-			var arr;
+//			var arr;
 			try {
 				arr = JSON.parse(localStorage.getItem(idstr));
 			} catch(e){;}
@@ -407,7 +408,7 @@ function loadStationsList(max) {
 			xhr = new XMLHttpRequest();
 			xhr.onreadystatechange = function() {			
 				if (xhr.readyState == 4 && xhr.status == 200) {
-					var arr;
+//					var arr;
 					try {
 						arr = JSON.parse(xhr.responseText);
 					} catch(e){;}
@@ -444,8 +445,8 @@ function getSelIndex() {
 		xhr.send();	
 }	*/
 function setMainHeight(name) {
-	var minh = window.innerHeight;
-	var h = document.getElementById(name).offsetHeight + 200;
+	var minh = window.innerHeight,
+		h = document.getElementById(name).offsetHeight + 200;
 	if(h<minh) h = minh;
 	document.getElementById("MAIN").style.height = h;
 }

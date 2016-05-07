@@ -533,7 +533,7 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 	struct sockaddr_in server_addr, client_addr;
 	int server_sock, client_sock;
 	socklen_t sin_size;
-    semclient = xSemaphoreCreateCounting(  2,  2 ); ;
+    semclient = xSemaphoreCreateCounting(  3,  3 ); ;
 	
 	while (1) {
         bzero(&server_addr, sizeof(struct sockaddr_in));

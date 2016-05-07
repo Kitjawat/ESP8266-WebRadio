@@ -240,7 +240,31 @@ ICACHE_FLASH_ATTR void clearHeaders()
 	}
 	header.members.mArr[METAINT] = 0;
 }
-		
+	
+ICACHE_FLASH_ATTR bool clientSaveOneHeader(char* t, uint16_t len, uint8_t header_num)
+{
+	if((header.members.mArr[header_num] != NULL)&&(headerlen[header_num] < (len+1)*sizeof(char))) 
+	{	// realloc if new malloc is bigger (avoid heap fragmentation)
+		free(header.members.mArr[header_num]);
+		header.members.mArr[header_num] = NULL;
+	}
+	if(header.members.mArr[header_num] == NULL) 
+//	if(header.members.mArr[header_num] != NULL) free(header.members.mArr[header_num]);
+	header.members.mArr[header_num] = (char*)malloc((len+1)*sizeof(char));
+	headerlen[header_num] = (len+1)*sizeof(char);
+	if(header.members.mArr[header_num] != NULL)
+	{
+		int i;
+		for(i = 0; i<len+1; i++) header.members.mArr[header_num][i] = 0;
+		strncpy(header.members.mArr[header_num], t, len);
+//		printf("header before addr:0x%x  cont:%s\n",header.members.mArr[header_num],header.members.mArr[header_num]);
+		header.members.mArr[header_num] = stringify(header.members.mArr[header_num],&headerlen[header_num]);
+//		printf("header after  addr:0x%x  cont:%s\n",header.members.mArr[header_num],header.members.mArr[header_num]);
+	}
+	return true;
+}
+
+	
 ICACHE_FLASH_ATTR bool clientParseHeader(char* s)
 {
 	// icy-notice1 icy-notice2 icy-name icy-genre icy-url icy-br
@@ -267,25 +291,7 @@ ICACHE_FLASH_ATTR bool clientParseHeader(char* s)
 				uint16_t len = t_end - t;
 				if(header_num != METAINT) // Text header field
 				{
-					if((header.members.mArr[header_num] != NULL)&&(headerlen[header_num] < (len+1)*sizeof(char))) 
-					{	// realloc if new malloc is bigger (avoid heap fragmentation)
-						free(header.members.mArr[header_num]);
-						header.members.mArr[header_num] = NULL;
-					}
-					if(header.members.mArr[header_num] == NULL) 
-//					if(header.members.mArr[header_num] != NULL) free(header.members.mArr[header_num]);
-					header.members.mArr[header_num] = (char*)malloc((len+1)*sizeof(char));
-					headerlen[header_num] = (len+1)*sizeof(char);
-					if(header.members.mArr[header_num] != NULL)
-					{
-						int i;
-						for(i = 0; i<len+1; i++) header.members.mArr[header_num][i] = 0;
-						strncpy(header.members.mArr[header_num], t, len);
-//						printf("header before addr:0x%x  cont:%s\n",header.members.mArr[header_num],header.members.mArr[header_num]);
-						header.members.mArr[header_num] = stringify(header.members.mArr[header_num],&headerlen[header_num]);
-//						printf("header after  addr:0x%x  cont:%s\n",header.members.mArr[header_num],header.members.mArr[header_num]);
-						ret = true;
-					}
+					ret = clientSaveOneHeader(t, len, header_num);
 				}
 				else // Numerical header field
 				{
@@ -402,8 +408,7 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(char *pdata, unsigned short len)
 				printf("Header: Moved\n");
 				clientDisconnect();
 				clientParsePlaylist(pdata);
-				cstatus = C_PLAYLIST;
-				
+				cstatus = C_PLAYLIST;				
 			}	
 			break;
 		}
@@ -421,9 +426,7 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(char *pdata, unsigned short len)
 				icyfound = clientParseHeader(head);
 				if(header.members.single.metaint > 0) 
 				metad = header.members.single.metaint;
-//			t1 = strstr(pdata, "\r\n\r\n"); // END OF HEADER
-				printf("t1: 0x%x, cstatus: %d, icyfound: %d  metad:%d Metaint:%d\n",t1,cstatus,icyfound,metad,header.members.single.metaint); 
-//				if ((t1 != NULL) && (len >= 4)&&(t1 <= pdata+len-4)) {
+//				printf("t1: 0x%x, cstatus: %d, icyfound: %d  metad:%d Metaint:%d\n",t1,cstatus,icyfound,metad,header.members.single.metaint); 
 				cstatus = C_DATA;				
 				VS1053_flush_cancel(1);
 				int newlen = lhead - (t1-head) - 4;
@@ -561,7 +564,11 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 				while ( bytes_read > 0 );
 			} else printf("WebClient Socket fails to connect %d\n", errno);
 			/*---Clean up---*/
-			if (bytes_read == 0 ) clientDisconnect(); //jpc
+			if (bytes_read == 0 ) 
+			{
+					clientDisconnect(); 
+					clientSaveOneHeader("Not Found", 9,METANAME);
+			}//jpc
 			bufferReset();
 			if (playing) VS1053_flush_cancel(2);
 			playing = 0;

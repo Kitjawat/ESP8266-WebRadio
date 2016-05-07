@@ -4,6 +4,7 @@
 #include "c_types.h"
 #define METADATA 9
 #define METAINT 8
+#define METANAME 0
 #define ICY_HEADERS_COUNT 9
 #define ICY_HEADER_COUNT 10
 struct icyHeader
