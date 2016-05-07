@@ -362,19 +362,21 @@ ICACHE_FLASH_ATTR void clientDisconnect()
 	clearHeaders();
 }
 
-ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned short len)
+ICACHE_FLASH_ATTR void clientReceiveCallback(char *pdata, unsigned short len)
 {
 	/* TODO:
-		- What if header is in more than 1 data part?
-		- Metadata processing
-		- Buffer underflow handling (?)
+		- What if header is in more than 1 data part? // ok now ...
+		- Metadata processing // ok
+		- Buffer underflow handling (?) ?
 	*/
 	static int metad ;
 	uint16_t l ;
 	char* t1;
+	static char* head;
+	static uint16_t lhead;
 	bool  icyfound;
 
-//	if (cstatus != C_DATA){printf("cstatus= %d\n",cstatus);  printf("Byte_list = %s\n",pdata);}
+	if (cstatus != C_DATA){printf("cstatus= %d\n",cstatus);  printf("Len=%d, Byte_list = %s\n",len,pdata);}
 	switch (cstatus)
 	{
 	case C_PLAYLIST:
@@ -389,9 +391,9 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 		cstatus = C_PLAYLIST;
 	break;
 	case C_HEADER:
-	case C_HEADER1:  // not ended
 		clearHeaders();
 		metad = -1;
+		lhead = 0;
 		t1 = strstr(pdata, "302 "); 
 		if (t1 ==NULL) t1 = strstr(pdata, "301 "); 
 		if (t1 != NULL) { // moved to a new address
@@ -401,20 +403,32 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(void *arg, char *pdata, unsigned sh
 				clientDisconnect();
 				clientParsePlaylist(pdata);
 				cstatus = C_PLAYLIST;
+				
 			}	
+			break;
 		}
-		else {
-			icyfound = clientParseHeader(pdata);
+		head = malloc(len);
+	case C_HEADER1:  // not ended
+		{
 			cstatus = C_HEADER1;
-			if(header.members.single.metaint > 0) 
+			head = realloc(head,lhead+len+1);
+			memcpy(head+lhead,pdata,len);
+			lhead += len;
+			t1 = strstr(head, "\r\n\r\n"); // END OF HEADER
+			printf("Header len: %d,  Header: %s\n",lhead,head);
+			if ((t1 != NULL) && (lhead >= 4)&&(t1 <= head+lhead-4)) 
+			{	
+				icyfound = clientParseHeader(head);
+				if(header.members.single.metaint > 0) 
 				metad = header.members.single.metaint;
-			t1 = strstr(pdata, "\r\n\r\n"); // END OF HEADER
-//			printf("t1: 0x%x, cstatus: %d, icyfound: %d\n",t1,cstatus,icyfound); 
-			if (t1 != NULL) {
+//			t1 = strstr(pdata, "\r\n\r\n"); // END OF HEADER
+				printf("t1: 0x%x, cstatus: %d, icyfound: %d  metad:%d Metaint:%d\n",t1,cstatus,icyfound,metad,header.members.single.metaint); 
+//				if ((t1 != NULL) && (len >= 4)&&(t1 <= pdata+len-4)) {
 				cstatus = C_DATA;				
 				VS1053_flush_cancel(1);
-				int newlen = len - (t1-pdata) - 4;
-				if(newlen > 0) clientReceiveCallback(NULL, t1+4, newlen);
+				int newlen = lhead - (t1-head) - 4;
+				if(newlen > 0) clientReceiveCallback(t1+4, newlen);
+				free(head);
 			}
 		}
 	break;
@@ -494,7 +508,7 @@ ICACHE_FLASH_ATTR void vsTask(void *pvParams) {
 
 ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 #define RECEIVE 1440
-//1440	720
+//1440	for MTU 1500
 	int sockfd, bytes_read;
 	struct sockaddr_in dest;
 //	uint8_t buffer[RECEIVE];
@@ -540,7 +554,7 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 					bytes_read = recv(sockfd, buffer, RECEIVE, 0);
 //					printf("s:%d   ", bytes_read);
 					if ( bytes_read > 0 ) {
-						clientReceiveCallback(NULL, buffer, bytes_read);
+						clientReceiveCallback(buffer, bytes_read);
 					}	
 					if(xSemaphoreTake(sDisconnect, 0)) break;
 				}
