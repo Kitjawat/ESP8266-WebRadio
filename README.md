@@ -1,6 +1,13 @@
 # **ESP8266-WebRadio** #
 ###WiFi shoutcast player based on ESP8266 chip
 ##Basic informations
+Version: 1.0.1<br />
+A static ip at the first start is a problem if you are not in 192.168.1.xxx network.<br />
+The first start will now be in dhcp mode. See the allocated ip in the uart traces or scan your network.<br />
+This can be done with fing for mobile for example: <br />
+IOS: https://itunes.apple.com/fr/app/fing-network-scanner/id430921107?mt=8<br />
+Android: https://play.google.com/store/apps/details?id=com.overlook.android.fing&hl=fr<br />
+
 Version: 1.0.0 (KaraWin)<br />
 Status: under design and development
 ### 2016, May (KaraWin)
@@ -26,7 +33,7 @@ First step, Final release done.
 - In the gateway field, enter the ip address of your router.
 - Validate. The equipment restart to the new configuration. Connect your wifi to your AP and browse to the ip given in configuration.
 - Congratulation, you can edit your own station list. Dont forget to save your stations list in case of problem or for new equipments.
-- if the AP is already know by the esp8266, the default ip at the first start is 192.168.1.254
+- if the AP is already know by the esp8266, the default ip is given by dhcp.
 - a sample of stations list is on https://github.com/karawin/ESP8266-WebRadio/blob/master/ESP8266-Firmware/WebStations.txt . Can be uploaded via the web page.        
 
 #### Feedback

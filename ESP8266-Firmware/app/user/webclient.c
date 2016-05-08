@@ -546,7 +546,7 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 				  cstatus = C_PLAYLIST;
 				  sprintf(buffer, "GET %s HTTP/1.0\r\nHOST: %s\r\n\r\n", clientPath,clientURL); //ask for the playlist
 			    } 
-				else sprintf(buffer, "GET %s HTTP/1.0\r\nHost: %s\r\nicy-metadata:1\r\n\r\n", clientPath,clientURL); 
+				else sprintf(buffer, "GET %s HTTP/1.1\r\nHost: %s\r\nicy-metadata: 1\r\n\r\n", clientPath,clientURL); 
 //				printf("st:%d, Client Sent:\n%s\n",cstatus,buffer);
 				send(sockfd, buffer, strlen(buffer), 0);
 				

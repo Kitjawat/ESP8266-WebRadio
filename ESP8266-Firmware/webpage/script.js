@@ -263,8 +263,9 @@ function editStation(id) {
 function refreshList() {
 	promptworking("Working.. Please Wait");
 	localStorage.clear();
-	loadStationsList(191);
-	promptworking("");
+	window.location.reload(false);
+//	loadStationsList(191);
+//	promptworking("");
 }
 
 function clearList() {
@@ -310,9 +311,9 @@ function downloadStations()
 				}
 			}
 			localStorage.clear();
-			loadStationsList(191);		
-			promptworking("");
+//			loadStationsList(191);		
 			window.location.reload(false);
+
 		};
 		file = document.getElementById('fileload').files[0];
 		if (file==null) alert("Please select a file");
@@ -469,5 +470,6 @@ document.addEventListener("DOMContentLoaded", function() {
 	refresh();
 	wifi(0) ;
 	setMainHeight("tab-content1");
+	promptworking("");
 	window.setInterval(refresh,5000);
 });

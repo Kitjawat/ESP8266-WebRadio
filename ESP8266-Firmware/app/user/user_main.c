@@ -70,7 +70,7 @@ void uartInterfaceTask(void *pvParameters) {
 		IPADDR2_COPY(&device->gate, &info->gw);
 		strcpy(device->ssid,config->ssid);
 		strcpy(device->pass,config->password);
-		device->dhcpEn = false;
+		device->dhcpEn = true;
 		wifi_set_ip_info(STATION_IF, info);
 		saveDeviceSettings(device);	
 	}
@@ -83,6 +83,11 @@ void uartInterfaceTask(void *pvParameters) {
 		IP4_ADDR(&(info->ip), device->ipAddr[0], device->ipAddr[1],device->ipAddr[2], device->ipAddr[3]);
 		IP4_ADDR(&(info->netmask), device->mask[0], device->mask[1],device->mask[2], device->mask[3]);
 		IP4_ADDR(&(info->gw), device->gate[0], device->gate[1],device->gate[2], device->gate[3]);
+
+/*		IP4_ADDR(&(info->ip),  192, 168, 10, 100);
+		IP4_ADDR(&(info->netmask), device->mask[0], device->mask[1],device->mask[2], device->mask[3]);
+		IP4_ADDR(&(info->gw), 192, 168, 10, 1);
+*/
 		strcpy(config->ssid,device->ssid);
 		strcpy(config->password,device->pass);
 		wifi_station_set_config(config);
