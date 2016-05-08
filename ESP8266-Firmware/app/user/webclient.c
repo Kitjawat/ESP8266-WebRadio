@@ -382,7 +382,7 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(char *pdata, unsigned short len)
 	static uint16_t lhead;
 	bool  icyfound;
 
-	if (cstatus != C_DATA){printf("cstatus= %d\n",cstatus);  printf("Len=%d, Byte_list = %s\n",len,pdata);}
+//	if (cstatus != C_DATA){printf("cstatus= %d\n",cstatus);  printf("Len=%d, Byte_list = %s\n",len,pdata);}
 	switch (cstatus)
 	{
 	case C_PLAYLIST:
@@ -420,7 +420,7 @@ ICACHE_FLASH_ATTR void clientReceiveCallback(char *pdata, unsigned short len)
 			memcpy(head+lhead,pdata,len);
 			lhead += len;
 			t1 = strstr(head, "\r\n\r\n"); // END OF HEADER
-			printf("Header len: %d,  Header: %s\n",lhead,head);
+//			printf("Header len: %d,  Header: %s\n",lhead,head);
 			if ((t1 != NULL) && (lhead >= 4)&&(t1 <= head+lhead-4)) 
 			{	
 				icyfound = clientParseHeader(head);

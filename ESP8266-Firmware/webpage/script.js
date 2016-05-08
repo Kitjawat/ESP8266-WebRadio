@@ -143,7 +143,7 @@ function onRangeVolChange($value) {
 	document.getElementById('vol_range').value = $value;
 	document.getElementById('vol1_range').value = $value;
 	xhr = new XMLHttpRequest();
-	xhr.open("POST","soundvol",true);
+	xhr.open("POST","soundvol",false);
 	xhr.setRequestHeader(content,ctype);
 	xhr.send(  "vol=" + $value+"&");
 }
@@ -195,13 +195,13 @@ function stopStation() {
 	var select = document.getElementById('stationsSelect');
 	localStorage.setItem('selindexstore', select.options.selectedIndex.toString());
 	xhr = new XMLHttpRequest();
-	xhr.open("POST","stop",true);
+	xhr.open("POST","stop",false);
 	xhr.setRequestHeader(content,ctype);
 	xhr.send("id=" + select.options[select.options.selectedIndex].id+"&");
 }
 function saveSoundSettings() {
 	xhr = new XMLHttpRequest();
-	xhr.open("POST","sound",true);
+	xhr.open("POST","sound",false);
 	xhr.setRequestHeader(content,ctype);
 	xhr.send(
 	           "&bass=" + document.getElementById('bass_range').value 

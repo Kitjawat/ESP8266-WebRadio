@@ -487,12 +487,12 @@ xSemaphoreHandle semclient = NULL ;
 
 ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 	struct timeval timeout;      
-    timeout.tv_sec = 3000; // bug *1000 for seconds
+    timeout.tv_sec = 10000; // bug *1000 for seconds
     timeout.tv_usec = 0;
 	int recbytes =0;
 	int  client_sock =  *(int*)pvParams;
     char *buf = (char *)zalloc(1024);
-//	printf("Client entry  socket:%x    ,",client_sock);
+	printf("Client entry  socket:%x    ,",client_sock);
 	if (buf != NULL)
 	{
 		if (setsockopt (client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
@@ -517,15 +517,15 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 				} else printf("try again\n");
 			}
 		}
-		if (recbytes == 0) {
+/*		if (recbytes == 0) {
 //			printf ("Socket %d read 0 %d\n",client_sock, errno);
-		}
+		}*/
 		free(buf);
 	}
 	shutdown(client_sock,SHUT_RDWR);
 	vTaskDelay(10);
 	close(client_sock);
-//	printf("Client exit\n");
+	printf("Client exit\n");
  	xSemaphoreGive(semclient);	
 	vTaskDelete( NULL );	
 }	
@@ -533,7 +533,7 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 	struct sockaddr_in server_addr, client_addr;
 	int server_sock, client_sock;
 	socklen_t sin_size;
-    semclient = xSemaphoreCreateCounting(  3,  3 ); ;
+    semclient = xSemaphoreCreateCounting(  2,  2); ;
 	
 	while (1) {
         bzero(&server_addr, sizeof(struct sockaddr_in));
@@ -571,7 +571,7 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 				{
 					while (1) 
 					{
-						if (xSemaphoreTake(semclient,0x1000)){ 
+						if (xSemaphoreTake(semclient,4000)){ 
 							xTaskCreate( serverclientTask,
 							"t10",
 							512,
@@ -579,7 +579,7 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 							4,
 							NULL );
 							break;
-						} else printf("no room for client\n");
+						} else {vTaskDelay(100);printf("no room for client\n");}
 					}
 				}			
             }
