@@ -2,6 +2,8 @@
 #define __WEBCLIENT_H__
 
 #include "c_types.h"
+#include "websocket.h"
+
 #define METADATA 9
 #define METAINT 8
 #define METANAME 0

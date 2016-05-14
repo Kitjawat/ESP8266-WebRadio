@@ -5,7 +5,7 @@
 #include "string.h"
 #include "stdlib.h"
 #include "eeprom.h"
-
+extern void playStation(char* id);
 #define MAX_WIFI_STATIONS 50
 
 uint8_t startsWith(const char *pre, const char *str)
@@ -17,7 +17,7 @@ uint8_t startsWith(const char *pre, const char *str)
 
 ICACHE_FLASH_ATTR void printInfo(char* s)
 {
-	printf("\n#INFO#\n%s\n##INFO#", s);
+	printf("#INFO:\"%s\"#\n", s);
 }
 
 ICACHE_FLASH_ATTR void wifiScanCallback(void *arg, STATUS status)
@@ -221,7 +221,30 @@ ICACHE_FLASH_ATTR void clientParsePort(char *s)
         free(port);
     }
 }
-
+ICACHE_FLASH_ATTR void clientPlay(char *s)
+{
+    char *t = strstr(s, "(\"");
+	if(t == 0)
+	{
+		printf("\n##CLI.CMD_ERROR#");
+		return;
+	}
+	char *t_end  = strstr(t, "\")")-2;
+    if(t_end <= 0)
+    {
+		printf("\n##CLI.CMD_ERROR#");
+		return;
+    }
+   char *id = (char*) malloc((t_end-t+1)*sizeof(char));
+    if(id != NULL)
+    {
+        uint8_t tmp;
+        for(tmp=0; tmp<(t_end-t+1); tmp++) id[tmp] = 0;
+        strncpy(id, t+2, (t_end-t));
+		playStation(id);
+        free(id);
+    }	
+}
 ICACHE_FLASH_ATTR void checkCommand(int size, char* s)
 {
 	char *tmp = (char*)malloc((size+1)*sizeof(char));
@@ -239,6 +262,7 @@ ICACHE_FLASH_ATTR void checkCommand(int size, char* s)
     else if(startsWith("cli.port", tmp)) clientParsePort(tmp);
     else if(strcmp(tmp, "cli.start") == 0) clientConnect();
     else if(strcmp(tmp, "cli.stop") == 0) clientDisconnect();
+    else if(startsWith("cli.play",tmp)) clientPlay(tmp);
     else if(strcmp(tmp, "sys.erase") == 0) eeEraseAll();
 	else printInfo(tmp);
 	free(tmp);

@@ -1,6 +1,31 @@
 var content = "Content-type",
 	ctype = "application/x-www-form-urlencoded",
 	cjson = "application/json";
+var intervalid , websocket ;	
+/*
+try{
+free(websocket);
+} catch(e){;}
+
+websocket = new WebSocket("ws://"+window.location.host+"/");
+console.log("url:"+"ws://"+window.location.host+"/");
+
+websocket.onmessage = function (event) {
+	    var arr = JSON.parse(event.data);		
+		console.log("onmessage:"+event.data);
+		if (arr["meta"]) document.getElementById('meta').innerHTML = arr["meta"].replace(/\\/g,"");
+		if (arr["wsvol"]) onRangeVolChange(arr['wsvol'],false); 
+	}
+websocket.onopen = function (event) {
+		console.log("onopen:"+event.code);
+	}
+websocket.onclose = function (event) {
+		console.log("onclose:"+event.code);
+		console.log("onclose:"+event.reason);
+		websocket = -1;
+	}	
+
+*/	
 function chkip($this)
 {
   if ( /^([0-9]+\.){3}[0-9]+$/.test($this.value) ) $this.style.color = "green";
@@ -91,7 +116,7 @@ function refresh() {
 			document.getElementById('treblefreq_range').value = arr["tfreq"].replace(/\\/g,"");
 			document.getElementById('bassfreq_range').value = arr["bfreq"].replace(/\\/g,"");
 			document.getElementById('spacial_range').value = arr["spac"].replace(/\\/g,"");
-			onRangeVolChange(document.getElementById('vol_range').value);
+			onRangeVolChange(document.getElementById('vol_range').value,false);
 			onRangeChange('treble_range', 'treble_span', 1.5, false,true);
 			onRangeChange('bass_range', 'bass_span', 1, false,true);
 			onRangeChangeFreqTreble('treblefreq_range', 'treblefreq_span', 1, false,true);
@@ -136,16 +161,20 @@ function onRangeChangeSpatial($range, $spanid, $nosave) {
 	document.getElementById($spanid).innerHTML = label;
 	if( typeof($nosave) == 'undefined' )saveSoundSettings();
 }
-function onRangeVolChange($value) {
+function onRangeVolChange($value,$local) {
 	var val = document.getElementById('vol_range').max -$value;
 	document.getElementById('vol1_span').innerHTML = (val * -0.5) + " dB";
 	document.getElementById('vol_span').innerHTML = (val * -0.5) + " dB";
 	document.getElementById('vol_range').value = $value;
 	document.getElementById('vol1_range').value = $value;
+/*	if (websocket != -1)
+		 if ($local) websocket.send("wsvol=" + $value+"&");
+	else*/ {
 	xhr = new XMLHttpRequest();
 	xhr.open("POST","soundvol",false);
 	xhr.setRequestHeader(content,ctype);
 	xhr.send(  "vol=" + $value+"&");
+	}
 }
 function wifi(valid) {
 	xhr = new XMLHttpRequest();
@@ -263,9 +292,9 @@ function editStation(id) {
 function refreshList() {
 	promptworking("Working.. Please Wait");
 	localStorage.clear();
-	window.location.reload(false);
 //	loadStationsList(191);
-//	promptworking("");
+	promptworking("");
+	window.location.reload(false);
 }
 
 function clearList() {
@@ -275,9 +304,9 @@ function clearList() {
 		xhr = new XMLHttpRequest();
 		xhr.open("POST","clear",false);
 		xhr.setRequestHeader(content,ctype);
-		xhr.send( "&&");
+		xhr.send( "&");
 		window.setTimeout(refreshList, 10);
-		promptworking("");
+//		promptworking("");
 	}
 }	
 
@@ -465,11 +494,11 @@ document.addEventListener("DOMContentLoaded", function() {
 			wifi(0) ;
 			setMainHeight("tab-content3");
 		});
-
+	if (intervalid != 0)  window.clearInterval(intervalid);
 	loadStationsList(191);
 	refresh();
 	wifi(0) ;
 	setMainHeight("tab-content1");
-	promptworking("");
-	window.setInterval(refresh,5000);
+	intervalid = window.setInterval(refresh,3000);
+	// open a websocket
 });

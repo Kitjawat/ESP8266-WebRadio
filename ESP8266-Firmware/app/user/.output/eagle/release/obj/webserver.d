@@ -1,4 +1,4 @@
-.output/eagle/release/obj/webserver.o .output/eagle/release/obj/webserver.d : webserver.c ../include/webserver.h ../include/serv-fs.h \
+.output/eagle/release/obj/webserver.o .output/eagle/release/obj/webserver.d : webserver.c ../include/webserver.h ../include/webclient.h \
  ../../include/espressif/c_types.h \
  /home/jp/esp-open-sdk/xtensa-lx106-elf/lib/gcc/xtensa-lx106-elf/4.8.2/include/stdint.h \
  /home/jp/esp-open-sdk/xtensa-lx106-elf/xtensa-lx106-elf/include/stdint.h \
@@ -10,9 +10,7 @@
  ../../extra_include/xtensa/config/core-isa.h \
  /home/jp/esp-open-sdk/xtensa-lx106-elf/lib/gcc/xtensa-lx106-elf/4.8.2/include/stdbool.h \
  /home/jp/esp-open-sdk/xtensa-lx106-elf/lib/gcc/xtensa-lx106-elf/4.8.2/include/stddef.h \
- ../include/../../webpage/index ../include/../../webpage/style \
- ../include/../../webpage/script ../include/../../webpage/logo \
- ../include/webclient.h ../include/vs1053.h ../../include/lwip/lwip/opt.h \
+ ../include/websocket.h ../../include/lwip/lwip/opt.h \
  ../../include/lwip/lwipopts.h ../../include/lwip/lwip/debug.h \
  ../../include/lwip/lwip/arch.h ../../include/lwip/arch/cc.h \
  /home/jp/esp-open-sdk/xtensa-lx106-elf/xtensa-lx106-elf/include/stdio.h \
@@ -78,5 +76,11 @@
  ../../include/espressif/esp_softap.h ../../include/espressif/esp_wifi.h \
  ../../include/lwip/lwip/sockets.h ../../include/lwip/ipv4/lwip/inet.h \
  ../../include/lwip/ipv6/lwip/inet6.h ../../include/lwip/lwip/dns.h \
- ../../include/lwip/lwip/netdb.h ../include/flash.h ../include/eeprom.h \
- ../include/interface.h
+ ../../include/lwip/lwip/netdb.h ../../include/ssl/ssl_crypto.h \
+ ../../include/ssl/ssl_config.h ../../include/ssl/ssl_bigint_impl.h \
+ ../../include/ssl/ssl_bigint.h ../include/cencode_inc.h \
+ ../include/vs1053.h ../include/flash.h ../include/eeprom.h \
+ ../include/interface.h ../include/serv-fs.h \
+ ../include/../../webpage/index ../include/../../webpage/style \
+ ../include/../../webpage/script ../include/../../webpage/logo \
+ ../include/../../webpage/favicon

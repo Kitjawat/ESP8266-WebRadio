@@ -20,13 +20,21 @@ struct servFile
 #include "../../webpage/style"
 #include "../../webpage/script"
 #include "../../webpage/logo"
+#include "../../webpage/favicon"
 
+const struct servFile faviconFile = {
+	"/favicon.png",
+	"image/png",
+	sizeof(favicon_png),
+	favicon_png,
+	(struct servFile*)NULL
+};
 const struct servFile logoFile = {
 	"/logo.png",
 	"image/png",
 	sizeof(logo_png),
 	logo_png,
-	(struct servFile*)NULL
+	(struct servFile*)&faviconFile
 };
 
 const struct servFile scriptFile = {

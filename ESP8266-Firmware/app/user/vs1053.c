@@ -83,7 +83,7 @@ ICACHE_FLASH_ATTR void SDI_ChipSelect(uint8_t State){
 	else PIN_OUT_SET |= (1<<XDCS_PIN);
 }
 
-ICACHE_FLASH_ATTR uint8_t VS1053_checkDREQ() {
+IRAM_ATTR uint8_t VS1053_checkDREQ() {
 	return (PIN_IN & (1<<DREQ_PIN));
 /*	if(PIN_IN & (1<<DREQ_PIN)) return 1;
 	else return 0;*/
@@ -429,7 +429,7 @@ ICACHE_FLASH_ATTR void VS1053_flush_cancel(uint8_t mode) {  // 0 only fillbyte  
 //		printf ("Wait CANCEL clear\n");
 		if (y++ > 513) 
 		{
-			VS1053_SoftwareReset();
+			VS1053_Start();
 			break;
 		}
 		

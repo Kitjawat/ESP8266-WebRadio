@@ -129,7 +129,7 @@ void uartInterfaceTask(void *pvParameters) {
 					printf("\n");
 //					smartconfig_stop();
 					FlashOn = 10;FlashOff = 100;
-					vTaskDelay(100);
+					vTaskDelay(200);
 					printf("Config not found\n");
 					printf("\n");
 					printf("The default AP is  WifiWebRadio. Connect your wifi to it.\nThen connect a webbrowser to 192.168.4.1 and go to Setting\n");
@@ -177,7 +177,7 @@ void uartInterfaceTask(void *pvParameters) {
 		checkCommand(t, tmp);
 		for(t = 0; t<64; t++) tmp[t] = 0;
 		t = 0;
-		vTaskDelay(25); // 250ms
+		vTaskDelay(20); // 250ms
 	}
 }
 
@@ -216,9 +216,9 @@ void user_init(void)
 	TCP_WND = 2 * TCP_MSS;
 
 	xTaskCreate(testtask, "t0", 176, NULL, 1, NULL); // DEBUG/TEST
-	xTaskCreate(uartInterfaceTask, "t1", 200, NULL, 2, NULL);
-	xTaskCreate(clientTask, "t3", 512, NULL, 3, NULL);
-	xTaskCreate(serverTask, "t2", 200, NULL, 3, NULL);
-	xTaskCreate(vsTask, "t4", 512, NULL, 4, NULL);
+	xTaskCreate(uartInterfaceTask, "t1", 254, NULL, 2, NULL);
+	xTaskCreate(clientTask, "t3", 512, NULL, 4, NULL);
+	xTaskCreate(serverTask, "t2", 512, NULL, 2, NULL);
+	xTaskCreate(vsTask, "t4", 512, NULL, 3, NULL);
 }
 
