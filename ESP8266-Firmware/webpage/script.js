@@ -80,8 +80,8 @@ function promptworking(label) {
 
 function saveTextAsFile()
 {
-	var output = '',id,textFileAsBlob; 
-	promptworking("Working... Please wait");
+	var output = '',id,textFileAsBlob,downloadLink; 
+//	promptworking("Working... Please wait");
 //	for (var key in localStorage) {
 	for (id =0;id<191 ;id++) {
 //	output = output+(localStorage[key])+'\n';
@@ -101,8 +101,8 @@ function saveTextAsFile()
             });
 			else		
 				downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-		downloadLink.click
-		promptworking("");
+		downloadLink.click();
+//		promptworking("");
 	}
 }
 function icyResp(arr) {			
