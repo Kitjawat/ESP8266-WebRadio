@@ -5,6 +5,7 @@
 Added: "Now playing" informations are now given with the help of a websocket. The display is immediatly updated on the browser.<br/>
 Reading 320Kb/s is improved<br/>
 Stability tested during many days and nights....<br/>
+Video on https://youtu.be/cT8cGp9pvcs<br/>
 #####Version: 1.0.1<br />
 A static ip at the first start is a problem if you are not in 192.168.1.xxx network.<br />
 The first start will now be in dhcp mode. See the allocated ip in the uart traces or scan your network.<br />
