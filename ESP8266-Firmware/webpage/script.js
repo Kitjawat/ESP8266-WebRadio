@@ -2,30 +2,52 @@ var content = "Content-type",
 	ctype = "application/x-www-form-urlencoded",
 	cjson = "application/json";
 var intervalid , websocket ;	
-/*
-try{
-free(websocket);
-} catch(e){;}
 
-websocket = new WebSocket("ws://"+window.location.host+"/");
-console.log("url:"+"ws://"+window.location.host+"/");
 
-websocket.onmessage = function (event) {
+function openwebsocket(){	
+	websocket = new WebSocket("ws://"+window.location.host+"/");
+	console.log("url:"+"ws://"+window.location.host+"/");
+
+	websocket.onmessage = function (event) {
+	try{	
 	    var arr = JSON.parse(event.data);		
 		console.log("onmessage:"+event.data);
 		if (arr["meta"]) document.getElementById('meta').innerHTML = arr["meta"].replace(/\\/g,"");
 		if (arr["wsvol"]) onRangeVolChange(arr['wsvol'],false); 
+		if (arr["wsicy"]) icyResp(arr["wsicy"]); 
+		if (arr["wssound"]) soundResp(arr["wssound"]); 
+	} catch(e){;}
+}
+	websocket.onopen = function (event) {
+		console.log("Open, url:"+"ws://"+window.location.host+"/");
+//		console.log("onopen websocket: "+websocket);
+		if(window.timerID){ /* a setInterval has been fired */
+		window.clearInterval(window.timerID);
+		window.timerID=0;}
+		refresh();
 	}
-websocket.onopen = function (event) {
-		console.log("onopen:"+event.code);
-	}
-websocket.onclose = function (event) {
-		console.log("onclose:"+event.code);
-		console.log("onclose:"+event.reason);
-		websocket = -1;
+	websocket.onclose = function (event) {
+		console.log("onclose code: "+event.code);
+		console.log("onclose reason: "+event.reason);
+		if(!window.timerID){ /* avoid firing a new setInterval, after one has been done */
+		window.timerID=setInterval(function(){checkwebsocket()}, 5000);
+		}	
 	}	
-
-*/	
+	websocket.onerror = function(event) {
+	// handle error event
+		console.log("onerror reason: "+event.reason);
+		websocket.close();
+	}
+}
+function checkwebsocket() {
+	if (typeof websocket == 'undefined') openwebsocket();	
+	else 
+	{
+		if (websocket.readyState == websocket.CLOSED) openwebsocket();	
+		else websocket.send("ping");
+	}	
+}	
+	
 function chkip($this)
 {
   if ( /^([0-9]+\.){3}[0-9]+$/.test($this.value) ) $this.style.color = "green";
@@ -79,17 +101,11 @@ function saveTextAsFile()
             });
 			else		
 				downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+		downloadLink.click
 		promptworking("");
-		downloadLink.click();
 	}
 }
-
-function refresh() {
-	xhr = new XMLHttpRequest();
-	xhr.onreadystatechange = function() {
-		if (xhr.readyState == 4 && xhr.status == 200) {
-			try{
-			var arr = JSON.parse(xhr.responseText);			
+function icyResp(arr) {			
 			if (arr["descr"] =="")	document.getElementById('ldescr').style.display = "none";
 			else 	document.getElementById('ldescr').style.display = "inline-block";
 			document.getElementById('descr').innerHTML = arr["descr"].replace(/\\/g,"");			
@@ -110,6 +126,8 @@ function refresh() {
 			document.getElementById('url1').innerHTML = arr["url1"].replace(/\\/g,"");
 			document.getElementById('url2').href = arr["url1"].replace(/\\/g,"");
 			document.getElementById('meta').innerHTML = arr["meta"].replace(/\\/g,"");
+}	
+function soundResp(arr) {			
 			document.getElementById('vol_range').value = arr["vol"].replace(/\\/g,"");
 			document.getElementById('treble_range').value = arr["treb"].replace(/\\/g,"");
 			document.getElementById('bass_range').value = arr["bass"].replace(/\\/g,"");
@@ -122,13 +140,21 @@ function refresh() {
 			onRangeChangeFreqTreble('treblefreq_range', 'treblefreq_span', 1, false,true);
 			onRangeChangeFreqBass('bassfreq_range', 'bassfreq_span', 10, false,true);
 			onRangeChangeSpatial('spacial_range', 'spacial_span', true);
+}	
+function refresh() {
+	xhr = new XMLHttpRequest();
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState == 4 && xhr.status == 200) {
+			try{
+				var arr = JSON.parse(xhr.responseText);
+				icyResp(arr);
+				soundResp(arr);
 			} catch(e){;}
 		}
-	}
+	}	
 	xhr.open("POST","icy",false);
 	xhr.setRequestHeader(content,ctype);
 	xhr.send("&");
-
 }
 
 function onRangeChange($range, $spanid, $mul, $rotate, $nosave) {
@@ -167,13 +193,14 @@ function onRangeVolChange($value,$local) {
 	document.getElementById('vol_span').innerHTML = (val * -0.5) + " dB";
 	document.getElementById('vol_range').value = $value;
 	document.getElementById('vol1_range').value = $value;
-/*	if (websocket != -1)
-		 if ($local) websocket.send("wsvol=" + $value+"&");
-	else*/ {
-	xhr = new XMLHttpRequest();
-	xhr.open("POST","soundvol",false);
-	xhr.setRequestHeader(content,ctype);
-	xhr.send(  "vol=" + $value+"&");
+//	checkwebsocket();
+		 if ($local &&websocket.readyState == websocket.OPEN) websocket.send("wsvol=" + $value+"&");
+	if ($local)
+	{
+		xhr = new XMLHttpRequest();
+		xhr.open("POST","soundvol",false);
+		xhr.setRequestHeader(content,ctype);
+		xhr.send(  "vol=" + $value+"&");
 	}
 }
 function wifi(valid) {
@@ -201,15 +228,17 @@ function wifi(valid) {
 	xhr.send("valid=" + valid +"&ssid=" + document.getElementById('ssid').value + "&pasw=" + document.getElementById('passwd').value + "&ip=" + document.getElementById('ip').value+"&msk=" + document.getElementById('mask').value+"&gw=" + document.getElementById('gw').value+"&dhcp=" + document.getElementById('dhcp').checked+"&");
 }
 function instantPlay() {
+	checkwebsocket();
 	xhr = new XMLHttpRequest();
 	xhr.open("POST","instant_play",false);
 	xhr.setRequestHeader(content,ctype);
 	if (!(document.getElementById('instant_path').value.substring(0, 1) === "/")) document.getElementById('instant_path').value = "/" + document.getElementById('instant_path').value;
 	document.getElementById('instant_url').value = document.getElementById('instant_url').value.replace(/^https?:\/\//,'');
 	xhr.send("url=" + document.getElementById('instant_url').value + "&port=" + document.getElementById('instant_port').value + "&path=" + document.getElementById('instant_path').value+"&");
-	window.setTimeout(refresh, 200);
+	window.setTimeout(refresh, 500);
 }
 function playStation() {
+	checkwebsocket();
 	select = document.getElementById('stationsSelect');
 	localStorage.setItem('selindexstore', select.options.selectedIndex.toString());
 	xhr = new XMLHttpRequest();
@@ -222,11 +251,12 @@ function playStation() {
 }
 function stopStation() {
 	var select = document.getElementById('stationsSelect');
+	checkwebsocket();
 	localStorage.setItem('selindexstore', select.options.selectedIndex.toString());
 	xhr = new XMLHttpRequest();
 	xhr.open("POST","stop",false);
 	xhr.setRequestHeader(content,ctype);
-	xhr.send("id=" + select.options[select.options.selectedIndex].id+"&");
+	xhr.send("&");
 }
 function saveSoundSettings() {
 	xhr = new XMLHttpRequest();
@@ -293,8 +323,8 @@ function refreshList() {
 	promptworking("Working.. Please Wait");
 	localStorage.clear();
 //	loadStationsList(191);
-	promptworking("");
 	window.location.reload(false);
+	promptworking("");
 }
 
 function clearList() {
@@ -306,7 +336,7 @@ function clearList() {
 		xhr.setRequestHeader(content,ctype);
 		xhr.send( "&");
 		window.setTimeout(refreshList, 10);
-//		promptworking("");
+		promptworking("");
 	}
 }	
 
@@ -340,17 +370,15 @@ function downloadStations()
 				}
 			}
 			localStorage.clear();
-//			loadStationsList(191);		
 			window.location.reload(false);
+			loadStationsList(191);		
 
 		};
 		file = document.getElementById('fileload').files[0];
 		if (file==null) alert("Please select a file");
 		else {
 			promptworking("Working.. Please Wait");
-			xhr.open("POST","clear",false);
-			xhr.setRequestHeader(content,ctype);
-			xhr.send( "&&");
+			stopStation();
 			reader.readAsText(file);
 		}
 	}	
@@ -390,7 +418,6 @@ function loadStations(page) {
 			xhr = new XMLHttpRequest();
 			xhr.onreadystatechange = function() {
 				if (xhr.readyState == 4 && xhr.status == 200) {
-//					var arr;
 					try{
 						arr = JSON.parse(xhr.responseText);
 					} catch (e){;}	
@@ -427,7 +454,6 @@ function loadStationsList(max) {
 		idstr = id.toString();
 		if (localStorage.getItem(idstr) != null)
 		{	
-//			var arr;
 			try {
 				arr = JSON.parse(localStorage.getItem(idstr));
 			} catch(e){;}
@@ -438,7 +464,6 @@ function loadStationsList(max) {
 			xhr = new XMLHttpRequest();
 			xhr.onreadystatechange = function() {			
 				if (xhr.readyState == 4 && xhr.status == 200) {
-//					var arr;
 					try {
 						arr = JSON.parse(xhr.responseText);
 					} catch(e){;}
@@ -479,6 +504,7 @@ function setMainHeight(name) {
 		h = document.getElementById(name).offsetHeight + 200;
 	if(h<minh) h = minh;
 	document.getElementById("MAIN").style.height = h;
+//	checkwebsocket();
 }
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -499,6 +525,6 @@ document.addEventListener("DOMContentLoaded", function() {
 	refresh();
 	wifi(0) ;
 	setMainHeight("tab-content1");
-	intervalid = window.setInterval(refresh,3000);
-	// open a websocket
+//	intervalid = window.setInterval(refresh,10000);
+	promptworking("");
 });

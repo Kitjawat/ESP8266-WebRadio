@@ -39,7 +39,7 @@ void  websocketacceptKey(char* clientKey,char* Output) {
     SHA1Final(&sha1HashBin[0], &ctx);
     base64_encode(sha1HashBin, 20,Output);
 //    key.trim();
-	printf ("ws key: \"%s\"  output:\"%s\"\n",clientKey,Output);
+//	printf ("ws key: \"%s\"  output:\"%s\"\n",clientKey,Output);
 }
 
 void wsclientDisconnect(int socket, uint16_t code, char * reason, size_t reasonLen) {
@@ -113,6 +113,7 @@ uint32_t decodeHttpMessage (char * inputMessage, char * outputMessage)
 	strcat(outputMessage,str2);
 	//Add extra /n/r at the end
 //	printf("ws decode HTTP: %x \"%s\"\n",outputMessage,outputMessage);
+	free(inputMessage);
 	return outputLength;
 }
 /////////////////////////////////////////////////////////////////////
@@ -120,6 +121,7 @@ uint32_t decodeHttpMessage (char * inputMessage, char * outputMessage)
 bool websocketnewclient(int socket)
 {
 	int i ;
+	printf("ws newclient:%d\n",socket);
 	for (i = 0;i<NBCLIENT;i++) if (webserverclients[i].socket == socket) return true;
 	else
 	for (i = 0;i<NBCLIENT;i++) if (webserverclients[i].socket == -1) 
@@ -130,10 +132,11 @@ bool websocketnewclient(int socket)
 	return false; // no more room
 }
 /////////////////////////////////////////////////////////////////////
-// a socket with a websocket request. Note it and answer to the client
+// remove the client in the list of clients
 void websocketremoveclient(int socket)
 {
 	int i ;
+	printf("ws removeclient:%d\n",socket);
 	for (i = 0;i<NBCLIENT;i++) if (webserverclients[i].socket == socket) 
 	{
 		webserverclients[i].socket = -1;
@@ -222,13 +225,16 @@ bool sendFrame(int socket, wsopcode_t opcode, uint8_t * payload , size_t length 
 
 /////////////////////////////////////////////
 //read a txt data. close the socket if errno
-void websocketparsedata(int socket, char* buf, int recbytes)
+void websocketparsedata(int socket, char* buf, int len)
 {
+	int recbytes = len;
 	wsMessageHeader_t header;
 	uint8_t * payload = buf;
 	uint8_t headerLen = 2;
-	while(headerLen > recbytes) recbytes += read(socket , payload, 1023-recbytes);
-	printf("ws parsedata entry1 recbytes:%d\n",recbytes);
+	if (!iswebsocket(socket)) return;
+//	printf("ws parsedata entry1  recbytes:%d\n",recbytes);
+	while(headerLen > recbytes) recbytes += read(socket , buf+recbytes, MAXDATA-recbytes);
+//	printf("ws parsedata entry11  recbytes:%d\n",recbytes);
 	header.fin = ((*payload >> 7) & 0x01);
 	header.opCode = (wsopcode_t) (*payload & 0x0F);
 	payload++; // second bytes
@@ -238,13 +244,13 @@ void websocketparsedata(int socket, char* buf, int recbytes)
 	
 	if(header.payloadLen == 126) {
 		headerLen += 2;
-		while(headerLen > recbytes) recbytes += read(socket , payload, 1023-recbytes);
+		while(headerLen > recbytes) recbytes += read(socket , buf+recbytes, MAXDATA-recbytes);
 //	printf("ws parsedata entry2 recbytes:%d\n",recbytes);
         header.payloadLen = payload[0] << 8 | payload[1];
         payload += 2;
     } else if(header.payloadLen == 127) {
 		headerLen += 8;
-		while(headerLen > recbytes) recbytes += read(socket , payload, 1023-recbytes);		
+		while(headerLen > recbytes) recbytes += read(socket , buf+recbytes, MAXDATA-recbytes);		
 // 	printf("ws parsedata entry3 recbytes:%d\n",recbytes);
        if(payload[0] != 0 || payload[1] != 0 || payload[2] != 0 || payload[3] != 0) {
             // really to big!
@@ -254,21 +260,21 @@ void websocketparsedata(int socket, char* buf, int recbytes)
         }
         payload += 8;
     }		
-	if(header.payloadLen > 1023-WEBSOCKETS_MAX_HEADER_SIZE) {	// we must be in one buf max for payload
+	if(header.payloadLen > MAXDATA-WEBSOCKETS_MAX_HEADER_SIZE) {	// we must be in one buf max for payload
 	// disconnect
 	return;
 	}
 	
     if(header.mask) {
 	    headerLen += 4;	
-		while(headerLen > recbytes) recbytes += read(socket , payload, 1023-recbytes);
-	printf("ws parsedata entry4 recbytes:%d\n",recbytes);
+		while(headerLen > recbytes) recbytes += read(socket , buf+recbytes, MAXDATA-recbytes);
+//	printf("ws parsedata entry4 recbytes:%d\n",recbytes);
 		header.maskKey = payload;
         payload += 4;
     }	
 	 headerLen += header.payloadLen;	
-	while(headerLen > recbytes) recbytes += read(socket , payload, 1023-recbytes);
-	printf("ws parsedata entry5 recbytes:%d\n",recbytes);
+	while(headerLen > recbytes) recbytes += read(socket , buf+recbytes, MAXDATA-recbytes);
+//	printf("ws parsedata entry5 recbytes:%d\n",recbytes);
 //
 	if(header.payloadLen > 0) {		
 		if(header.mask) {
@@ -282,14 +288,15 @@ void websocketparsedata(int socket, char* buf, int recbytes)
 	payload[header.payloadLen] = 0x00;	   
 	
 	
-	printf("ws parsedata data  opcode: %d  payload:%s   len:%d\n",header.opCode,payload,header.payloadLen);
+//	if (header.opCode == WSop_text)
+//		printf("ws parsedata data  socket:%d, opcode: %d,  payload:%s   len:%d\n",socket,header.opCode,payload,header.payloadLen);
 
 // ok payload is unmasked now.	
         switch(header.opCode) {
             case WSop_text:
                 // no break here!
             case WSop_binary:
-			websockehandle(socket, header.opCode, payload, header.payloadLen);
+			websockethandle(socket, header.opCode, payload, header.payloadLen);
                 break;
             case WSop_ping:
                 // send pong back
@@ -307,7 +314,6 @@ void websocketparsedata(int socket, char* buf, int recbytes)
                 wsclientDisconnect(socket, 1002,NULL,0);
                 break;
         }
-	free(buf);
 }	
 	
 //write a txt data
@@ -322,7 +328,7 @@ void websocketbroadcast(char* buf, int len)
 	for (i = 0;i<NBCLIENT;i++)	
 		if (iswebsocket( webserverclients[i].socket))
 		{
-			printf("ws broadcast to %d msg:\"%s\"\n",webserverclients[i].socket,buf);
+//			printf("ws broadcast to %d, freeheap:%d, msg:\"%s\"\n",webserverclients[i].socket,xPortGetFreeHeapSize( ),buf);
 			websocketwrite( webserverclients[i].socket,  buf, len);
 		}
 }	
@@ -333,7 +339,7 @@ void websocketlimitedbroadcast(int socket,char* buf, int len)
 	for (i = 0;i<NBCLIENT;i++)	
 		if (iswebsocket( webserverclients[i].socket))
 		{
-			printf("ws broadcast to %d msg:\"%s\"\n",webserverclients[i].socket,buf);
+//			printf("ws broadcast to %d omit %d,freeheap:%d,  msg:\"%s\"\n",webserverclients[i].socket,socket,xPortGetFreeHeapSize( ),buf);
 			if (webserverclients[i].socket != socket) websocketwrite( webserverclients[i].socket,  buf, len);
 		}
 }	
@@ -342,17 +348,18 @@ ICACHE_FLASH_ATTR void websocketTask(void* pvParams) {
 	// retrieve parameters
 	struct websocketparam* param = (struct websocketparam*) pvParams;
 	int conn  = param->socket;
-	printf("ws task entry socket:%d\n",conn);
+//	printf("ws task entry socket:%d\n",conn);
 	char* bufin = param->buf;
 	int buflen = param->len;
 	free (pvParams);
 	struct timeval timeout;      
-    timeout.tv_sec = 100000; // bug *1000 for seconds
+    timeout.tv_sec = 1000; // bug *1000 for seconds
     timeout.tv_usec = 0;	
-	char *buf = (char *)zalloc(1024);
-	uint32_t recbytes = 0;
+	char *buf = (char *)zalloc(MAXDATA);
+//	char buf[MAXDATA+1];
+	int32_t recbytes = 0;
 	bufin[buflen] = 0;
-	printf("wstask param: bufin:\"%s\", buflen: %d, buf:%x buf:\"%s\"\n",bufin,buflen,buf,buf); 
+//	printf("wstask param: bufin:\"%s\", buflen: %d, buf:%x buf:\"%s\"\n",bufin,buflen,buf,buf); 
 	// answer to the request and wait a message
 	if (buf != NULL)
 	{
@@ -361,31 +368,31 @@ ICACHE_FLASH_ATTR void websocketTask(void* pvParams) {
 		if ((!iswebsocket(conn ))&&(websocketnewclient(conn))) 
 		{
 			recbytes = decodeHttpMessage (bufin, buf);
-			free (bufin);
 			buf[recbytes] = 0;
 //			printf("ws write accept request: \"%s\" len:%d\n",buf,recbytes);
 			write(conn, buf, recbytes);  // reply to accept
-			while (iswebsocket(conn )) { // For now we assume max. 1023 bytes for request
-				recbytes = read(conn , buf, 1023);
+			while (iswebsocket(conn )) { // For now we assume max. MAXDATA bytes for request
+				recbytes = read(conn , buf, MAXDATA);
 				if (recbytes < 0) {
-					if (errno != EAGAIN )
+					if ((errno != EAGAIN )&&(errno != 0 ))
 					{
 						printf ("ws Socket %d read fails %d\n",conn, errno);
-						vTaskDelay(10);	
+						wsclientDisconnect(conn, 500,NULL,0);
 						break;
-					} else printf("ws try again\n");
+					} //else printf("ws try again\n");
 				}	
-				if (recbytes >0)websocketparsedata(conn, buf, recbytes);	
-			}
-			
+				if (recbytes > 0) websocketparsedata(conn, buf, recbytes);	
+				else vTaskDelay(100);
+			}			
 		} else free (bufin);
+		free (buf);
 	}
-	wsclientDisconnect(conn, 1000,NULL,0);
+	wsclientDisconnect(conn, 500,NULL,0);
 	strcpy(buf, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n");
 	write(conn, buf, strlen(buf));
 	shutdown(conn,SHUT_RDWR);
-	vTaskDelay(10);	
+	vTaskDelay(20);	
 	close(conn);
-	printf("ws task exit socket:%d\n",conn);
+//	printf("ws task exit socket:%d\n",conn);
 	vTaskDelete( NULL );	
 }

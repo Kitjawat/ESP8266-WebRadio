@@ -9,6 +9,8 @@
 #define METANAME 0
 #define ICY_HEADERS_COUNT 9
 #define ICY_HEADER_COUNT 10
+#define RECEIVE 1440
+
 struct icyHeader
 {
 	union
@@ -48,5 +50,5 @@ void clientConnect();
 void clientDisconnect();
 void clientTask(void *pvParams);
 void vsTask(void *pvParams) ;
-
+void wsVol(char* vol);
 #endif

@@ -23,7 +23,7 @@ Inspirated by:
 #include "c_types.h"
 
 #define NBCLIENT 4
-
+#define MAXDATA	 512
 typedef enum {
     WSop_continuation = 0x00, ///< %x0 denotes a continuation frame
     WSop_text = 0x01,         ///< %x1 denotes a text frame

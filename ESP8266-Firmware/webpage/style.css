@@ -29,6 +29,7 @@ html,body {
 }
 #HEAD a,a:visited {
 	font-size:10px;
+	line-height:20px;
 	color:#f0f0ff;
 	text-decoration:none
 }
@@ -111,6 +112,7 @@ html,body {
 }
 .tabs input[type=range] {
 	font-weight:bold;
+	min-width: 280px;	
 	background-color:#F8F8FF
 }
 .tabs input[type=text] {

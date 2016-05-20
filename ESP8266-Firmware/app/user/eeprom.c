@@ -11,8 +11,8 @@
 #define EEPROM_SIZE		0xBFFF	 // until xC000 (48k) espressif take the end
 #define NBSTATIONS		192
 
-uint32_t eebuf[1024];
-
+//uint32_t eebuf[1024];
+/*
 ICACHE_FLASH_ATTR uint8_t eeGetByte(uint32_t address) { // address = number of 1-byte parts from beginning
 	uint8_t t = 0;
 	spi_flash_read(EEPROM_START + address, (uint32 *)&t, 1);
@@ -42,7 +42,7 @@ ICACHE_FLASH_ATTR void eeSet4Byte(uint32_t address, uint32_t data) {
 	eebuf[(address/4) & 0xFFF] = data;
 	spi_flash_write(addr, (uint32 *)eebuf, 4096);
 }
-
+*/
 ICACHE_FLASH_ATTR void eeGetData(int address, void* buffer, int size) { // address, size in BYTES !!!!
 int result;
 	result = spi_flash_read(EEPROM_START + address, (uint32 *)buffer, size);
@@ -52,6 +52,9 @@ int result;
 ICACHE_FLASH_ATTR void eeSetData(int address, void* buffer, int size) { // address, size in BYTES !!!!
 	uint8_t* inbuf = buffer;
 int result;
+uint32_t* eebuf= malloc(4096);
+	if (eebuf != NULL)
+	{
 	while(1) {
 		uint32_t sector = (EEPROM_START + address) & 0xFFF000;
 		spi_flash_read(sector, (uint32 *)eebuf, 4096);
@@ -70,6 +73,8 @@ int result;
 		inbuf += i;
 		size -= i;
 	}
+	free (eebuf);
+	} else printf("eebuf malloc fails\n");
 }
 
 ICACHE_FLASH_ATTR void eeEraseAll() {

@@ -209,6 +209,7 @@ void user_init(void)
 	UART_SetBaudrate(0,115200);
 	wifi_set_opmode(STATION_MODE);
 	Delay(100);	
+	system_print_meminfo();
 	printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
 	clientInit();
 	VS1053_HW_init();
@@ -217,8 +218,8 @@ void user_init(void)
 
 	xTaskCreate(testtask, "t0", 176, NULL, 1, NULL); // DEBUG/TEST
 	xTaskCreate(uartInterfaceTask, "t1", 254, NULL, 2, NULL);
-	xTaskCreate(clientTask, "t3", 512, NULL, 4, NULL);
-	xTaskCreate(serverTask, "t2", 512, NULL, 2, NULL);
-	xTaskCreate(vsTask, "t4", 512, NULL, 3, NULL);
+	xTaskCreate(clientTask, "t3", 800, NULL, 5, NULL);
+	xTaskCreate(serverTask, "t2", 300, NULL, 3, NULL);
+	xTaskCreate(vsTask, "t4", 512, NULL,3, NULL);
 }
 

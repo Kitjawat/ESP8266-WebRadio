@@ -41,8 +41,8 @@ ICACHE_FLASH_ATTR void VS1053_HW_init(){
 
 ICACHE_FLASH_ATTR void VS1053_SPI_SpeedUp()
 {
-	spi_clock(HSPI, 4, 2); //10MHz
-//	spi_clock(HSPI, 4, 3); //6.66MHz
+//	spi_clock(HSPI, 4, 2); //10MHz
+	spi_clock(HSPI, 4, 3); //6.66MHz
 //	spi_clock(HSPI, 3, 3); //8.88MHz
 }
 
@@ -83,7 +83,7 @@ ICACHE_FLASH_ATTR void SDI_ChipSelect(uint8_t State){
 	else PIN_OUT_SET |= (1<<XDCS_PIN);
 }
 
-IRAM_ATTR uint8_t VS1053_checkDREQ() {
+ICACHE_FLASH_ATTR uint8_t VS1053_checkDREQ() {
 	return (PIN_IN & (1<<DREQ_PIN));
 /*	if(PIN_IN & (1<<DREQ_PIN)) return 1;
 	else return 0;*/
@@ -184,8 +184,7 @@ ICACHE_FLASH_ATTR void VS1053_regtest()
 	vsVersion = (MP3Status >> 4) & 0x000F; //Mask out only the four version bits
 	printf("VS Version (VS1053 is 4) = %d\r\n",vsVersion);
 	//The 1053B should respond with 4. VS1001 = 0, VS1011 = 1, VS1002 = 2, VS1053 = 3
-
-	printf("SCI_ClockF = 0x%X\r\n",MP3Clock);
+//	printf("SCI_ClockF = 0x%X\r\n",MP3Clock);
 	printf("SCI_ClockF = 0x%X\r\n",MP3Clock);
 }
 /*
@@ -217,14 +216,17 @@ ICACHE_FLASH_ATTR void VS1053_Start(){
 }
 
 ICACHE_FLASH_ATTR int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity){
-	if(quantity < 1) return 0;
+	if(quantity < 2) return 0;
 	spi_take_semaphore();
-	while(VS1053_checkDREQ() == 0);
+	VS1053_SPI_SpeedUp();
+	while(VS1053_checkDREQ() == 0) vTaskDelay(1);
 	SDI_ChipSelect(SET);
+	VS1053_SPI_SpeedUp();
 	int o = 0;
 	while(quantity)
 	{
-		if(VS1053_checkDREQ()) {
+		if(VS1053_checkDREQ()) 
+		{
 			int t = quantity;
 			int k;
 			if(t > 32) t = 32;
@@ -234,7 +236,7 @@ ICACHE_FLASH_ATTR int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity){
 			}
 			o += t;
 			quantity -= t;
-		}
+		} 
 	}
 	SDI_ChipSelect(RESET);
 	spi_give_semaphore();

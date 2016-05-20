@@ -5,7 +5,10 @@
 #include "string.h"
 #include "stdlib.h"
 #include "eeprom.h"
+extern void wsVol(char* vol);
+
 extern void playStation(char* id);
+extern void setVolume(char* vol);
 #define MAX_WIFI_STATIONS 50
 
 uint8_t startsWith(const char *pre, const char *str)
@@ -245,6 +248,33 @@ ICACHE_FLASH_ATTR void clientPlay(char *s)
         free(id);
     }	
 }
+ICACHE_FLASH_ATTR void clientVol(char *s)
+{
+    char *t = strstr(s, "(\"");
+	if(t == 0)
+	{
+		printf("\n##CLI.CMD_ERROR#");
+		return;
+	}
+	char *t_end  = strstr(t, "\")")-2;
+    if(t_end <= 0)
+    {
+		printf("\n##CLI.CMD_ERROR#");
+		return;
+    }
+   char *vol = (char*) malloc((t_end-t+1)*sizeof(char));
+    if (vol != NULL)
+    {
+        uint8_t tmp;
+        for(tmp=0; tmp<(t_end-t+1); tmp++) vol[tmp] = 0;
+        strncpy(vol, t+2, (t_end-t));
+		if ((atoi(vol)>=100)&&(atoi(vol)<=254))
+		{	
+			setVolume(vol);
+			wsVol(vol);		}	
+        free(vol);
+    }	
+}
 ICACHE_FLASH_ATTR void checkCommand(int size, char* s)
 {
 	char *tmp = (char*)malloc((size+1)*sizeof(char));
@@ -263,6 +293,7 @@ ICACHE_FLASH_ATTR void checkCommand(int size, char* s)
     else if(strcmp(tmp, "cli.start") == 0) clientConnect();
     else if(strcmp(tmp, "cli.stop") == 0) clientDisconnect();
     else if(startsWith("cli.play",tmp)) clientPlay(tmp);
+	else if(startsWith("cli.vol",tmp)) clientVol(tmp);
     else if(strcmp(tmp, "sys.erase") == 0) eeEraseAll();
 	else printInfo(tmp);
 	free(tmp);
