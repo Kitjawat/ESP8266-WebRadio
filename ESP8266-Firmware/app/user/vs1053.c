@@ -41,8 +41,8 @@ ICACHE_FLASH_ATTR void VS1053_HW_init(){
 
 ICACHE_FLASH_ATTR void VS1053_SPI_SpeedUp()
 {
-//	spi_clock(HSPI, 4, 2); //10MHz
-	spi_clock(HSPI, 4, 3); //6.66MHz
+	spi_clock(HSPI, 4, 2); //10MHz
+//	spi_clock(HSPI, 4, 3); //6.66MHz
 //	spi_clock(HSPI, 3, 3); //8.88MHz
 }
 
@@ -216,12 +216,11 @@ ICACHE_FLASH_ATTR void VS1053_Start(){
 }
 
 ICACHE_FLASH_ATTR int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity){
-	if(quantity < 2) return 0;
+	if(quantity ==0) return 0;
 	spi_take_semaphore();
 	VS1053_SPI_SpeedUp();
 	while(VS1053_checkDREQ() == 0) vTaskDelay(1);
 	SDI_ChipSelect(SET);
-	VS1053_SPI_SpeedUp();
 	int o = 0;
 	while(quantity)
 	{
@@ -239,6 +238,7 @@ ICACHE_FLASH_ATTR int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity){
 		} 
 	}
 	SDI_ChipSelect(RESET);
+//	VS1053_SPI_SpeedDown();
 	spi_give_semaphore();
 	return o;
 }

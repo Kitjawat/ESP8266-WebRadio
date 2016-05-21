@@ -568,7 +568,6 @@ IRAM_ATTR void vsTask(void *pvParams) {
 	device = getDeviceSettings();
 	Delay(300);
 
-	VS1053_SPI_SpeedUp();
 	VS1053_SetVolume(device->vol);	
 	VS1053_SetTreble(device->treble);
 	VS1053_SetBass(device->bass);
@@ -576,19 +575,20 @@ IRAM_ATTR void vsTask(void *pvParams) {
 	VS1053_SetBassFreq(device->freqbass);
 	VS1053_SetSpatial(device->spacial);
 	incfree(device);	
+	VS1053_SPI_SpeedUp();
 	while(1) {
-//		VS1053_SPI_SpeedUp();
 		if(playing) {
 			s = 0; 
-			size = bufferRead(b, VSTASKBUF); 
-			while(s < size) {
+			size = bufferRead(b, VSTASKBUF);		
+			while(s < size) 
+			{
 				s += VS1053_SendMusicBytes(b+s, size-s);
-			} 
-			vTaskDelay(1);
+			}
+			vTaskDelay(2);
 		} else 
 		{
-			VS1053_SPI_SpeedDown();
-			vTaskDelay(10);
+//			VS1053_SPI_SpeedDown();
+			vTaskDelay(20);
 		}	
 	}
 }
@@ -638,15 +638,15 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 
 				do
 				{
-//					memset(buffer,0, RECEIVE);
 					bytes_read = recv(sockfd, buffer, RECEIVE, 0);
-					bytes_read += recv(sockfd, buffer+bytes_read, RECEIVE-bytes_read, 0);
-					bytes_read += recv(sockfd, buffer+bytes_read, RECEIVE-bytes_read, 0);
-//					printf("s:%d   ", bytes_read);
-					//if ( bytes_read > 0 )
+					if (playing)
 					{
+						if (RECEIVE-bytes_read) bytes_read += recv(sockfd, buffer+bytes_read, RECEIVE-bytes_read, 0); //boost
+//						if (RECEIVE-bytes_read) bytes_read += recv(sockfd, buffer+bytes_read, RECEIVE-bytes_read, 0); //boost
+					}
+//					printf("s:%d   ", bytes_read);
+					if ( bytes_read > 0 )
 						clientReceiveCallback(sockfd,buffer, bytes_read);
-					}	
 					if(xSemaphoreTake(sDisconnect, 0)) break;	
 				}
 				while ( bytes_read > 0 );

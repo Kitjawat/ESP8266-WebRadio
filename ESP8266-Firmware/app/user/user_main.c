@@ -220,6 +220,6 @@ void user_init(void)
 	xTaskCreate(uartInterfaceTask, "t1", 254, NULL, 2, NULL);
 	xTaskCreate(clientTask, "t3", 800, NULL, 5, NULL);
 	xTaskCreate(serverTask, "t2", 300, NULL, 3, NULL);
-	xTaskCreate(vsTask, "t4", 512, NULL,3, NULL);
+	xTaskCreate(vsTask, "t4", 512, NULL,4, NULL);
 }
 
