@@ -57,6 +57,7 @@ cli.path("/path")		: the path of the station to play
 cli.port("xxxx")		: the port number of the station to play						
 cli.start				: start to play the given station
 cli.stop				: stop the playing station
+cli.list				: list of the recorded stations
 cli.play("xxx")			: play the xxx recorded station
 cli.vol("xxx")			: set the volume to xxx with xxx from 100 to 254 (max volume)
 

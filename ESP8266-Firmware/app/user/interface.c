@@ -224,6 +224,8 @@ ICACHE_FLASH_ATTR void clientParsePort(char *s)
         free(port);
     }
 }
+
+
 ICACHE_FLASH_ATTR void clientPlay(char *s)
 {
     char *t = strstr(s, "(\"");
@@ -248,6 +250,22 @@ ICACHE_FLASH_ATTR void clientPlay(char *s)
         free(id);
     }	
 }
+
+ICACHE_FLASH_ATTR void clientList()
+{
+	struct shoutcast_info* si;
+	int i;
+	printf("\n#CLI.LIST#\n");
+	for (i = 0;i <192;i++)
+	{
+		si = getStation(i);
+		if (si->port != 0)
+			printf("%3d: %s, %s:%d%s\n",i,si->name,si->domain,si->port,si->file);	
+		free(si);
+	}	
+	printf("\n#CLI.LIST#\n");
+}
+
 ICACHE_FLASH_ATTR void clientVol(char *s)
 {
     char *t = strstr(s, "(\"");
@@ -292,6 +310,7 @@ ICACHE_FLASH_ATTR void checkCommand(int size, char* s)
     else if(startsWith("cli.port", tmp)) clientParsePort(tmp);
     else if(strcmp(tmp, "cli.start") == 0) clientConnect();
     else if(strcmp(tmp, "cli.stop") == 0) clientDisconnect();
+    else if(strcmp(tmp, "cli.list") == 0) clientList();
     else if(startsWith("cli.play",tmp)) clientPlay(tmp);
 	else if(startsWith("cli.vol",tmp)) clientVol(tmp);
     else if(strcmp(tmp, "sys.erase") == 0) eeEraseAll();
