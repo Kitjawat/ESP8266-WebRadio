@@ -4,10 +4,8 @@
   * @author  Piotr Sperka
   * @date    07.08.2015
   * @brief   This file provides VS1053 usage and control functions. Based on VS1003 library by Przemyslaw Stasiak.
-/*
  * Copyright 2016 karawin (http://www.karawin.fr)
  * added control treble, bass and spacialisation
-*/
   ***********************************************************************************************************************
 */
 

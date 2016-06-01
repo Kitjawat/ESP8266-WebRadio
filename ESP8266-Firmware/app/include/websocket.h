@@ -6,7 +6,7 @@ Inspirated by:
 /*
  * Copyright 2016 karawin (http://www.karawin.fr)
 */
-*/
+
 #ifndef __WEBSOCKET_H__
 #define __WEBSOCKET_H__
 // max size of the WS Message Header
