@@ -77,7 +77,7 @@ function monerror()
 function mstop(){
 		monitor = document.getElementById("audio");	
 		monitor.muted = true;
-//		monitor.src = '';
+		monitor.src = 'http://www.xamuel.com/blank-mp3-files/point1sec.mp3';
 		playing = false;
 }	
 function mpause(){
