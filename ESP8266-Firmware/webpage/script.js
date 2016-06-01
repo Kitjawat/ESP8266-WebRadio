@@ -1,8 +1,9 @@
 var content = "Content-type",
 	ctype = "application/x-www-form-urlencoded",
 	cjson = "application/json";
-var intervalid , websocket ;	
-
+var intervalid , websocket,urlmonitor , playing = false;
+	
+//checkwebsocket();
 
 function openwebsocket(){	
 	websocket = new WebSocket("ws://"+window.location.host+"/");
@@ -12,12 +13,14 @@ function openwebsocket(){
 	try{	
 	    var arr = JSON.parse(event.data);		
 		console.log("onmessage:"+event.data);
-		if (arr["meta"]) document.getElementById('meta').innerHTML = arr["meta"].replace(/\\/g,"");
+		if (arr["meta"]) {document.getElementById('meta').innerHTML = arr["meta"].replace(/\\/g,"");setMainHeight("tab-content1");}
 		if (arr["wsvol"]) onRangeVolChange(arr['wsvol'],false); 
 		if (arr["wsicy"]) icyResp(arr["wsicy"]); 
 		if (arr["wssound"]) soundResp(arr["wssound"]); 
+		if (arr["monitor"]) playMonitor(arr["monitor"]); 
 	} catch(e){;}
 }
+
 	websocket.onopen = function (event) {
 		console.log("Open, url:"+"ws://"+window.location.host+"/");
 //		console.log("onopen websocket: "+websocket);
@@ -39,12 +42,59 @@ function openwebsocket(){
 		websocket.close();
 	}
 }
+
+function playMonitor($arr){
+	urlmonitor = "";
+	urlmonitor = $arr;	
+	if (playing)
+	{
+		monitor = document.getElementById("audio");	
+		if (urlmonitor.endsWith("/"))
+			monitor.src = urlmonitor+";";
+		else monitor.src = urlmonitor;	
+		monitor.play();
+	}
+}	
+function mplay(){
+//	mstop();
+	websocket.send("monitor");
+	monitor = document.getElementById("audio");
+	if (urlmonitor.endsWith("/"))
+		monitor.src = urlmonitor+";";
+	else monitor.src = urlmonitor;
+	monitor.volume = document.getElementById("volm_range").value / 100;
+	while (monitor.networkState == 2);
+	monitor.play();
+	playing = true;	
+	monitor.muted = false;
+}	
+
+function monerror()
+{
+		monitor = document.getElementById("audio");
+		console.log("monitor error1 "+ monitor.error.code);
+}	
+function mstop(){
+		monitor = document.getElementById("audio");	
+		monitor.muted = true;
+//		monitor.src = '';
+		playing = false;
+}	
+function mpause(){
+		monitor = document.getElementById("audio");	
+		monitor.pause();
+}	
+function mvol($val){
+	monitor = document.getElementById("audio");
+	monitor.volume= $val;
+}	
+
 function checkwebsocket() {
 	if (typeof websocket == 'undefined') openwebsocket();	
 	else 
 	{
 		if (websocket.readyState == websocket.CLOSED) openwebsocket();	
-		else websocket.send("ping");
+		else websocket.send("monitor");
 	}	
 }	
 	
@@ -105,27 +155,73 @@ function saveTextAsFile()
 //		promptworking("");
 	}
 }
+
+function full(){
+	if (document.getElementById('Full').checked)
+	{
+		if ((document.getElementById('not1').innerHTML =="")&& (document.getElementById('not1').innerHTML ==""))	
+			document.getElementById('lnot1').style.display = "none";
+			else 	document.getElementById('lnot1').style.display = "inline-block";	
+			
+		if (document.getElementById('bitr').innerHTML =="")
+			document.getElementById('lbitr').style.display = "none";
+			else 	document.getElementById('lbitr').style.display = "inline-block";
+			
+		if (document.getElementById('descr').innerHTML =="")
+			document.getElementById('ldescr').style.display = "none";
+			else 	document.getElementById('ldescr').style.display = "inline-block";		
+
+		if (document.getElementById('genre').innerHTML =="")
+			document.getElementById('lgenre').style.display = "none";
+			else 	document.getElementById('lgenre').style.display = "inline-block";	
+			
+	} else
+	{
+		document.getElementById('lnot1').style.display = "none";	
+		document.getElementById('lbitr').style.display = "none";
+		document.getElementById('ldescr').style.display = "none";
+		document.getElementById('lgenre').style.display = "none";
+	}
+	setMainHeight("tab-content1");
+}
+	
 function icyResp(arr) {			
-			if (arr["descr"] =="")	document.getElementById('ldescr').style.display = "none";
+			if ((arr["descr"] =="")||(!document.getElementById('Full').checked))
+				document.getElementById('ldescr').style.display = "none";
 			else 	document.getElementById('ldescr').style.display = "inline-block";
 			document.getElementById('descr').innerHTML = arr["descr"].replace(/\\/g,"");			
 			document.getElementById('name').innerHTML = arr["name"].replace(/\\/g,"");
-			if (arr["bitr"] ==""){	document.getElementById('lbitr').style.display = "none";}
+			if ((arr["bitr"] =="")||(!document.getElementById('Full').checked)){	document.getElementById('lbitr').style.display = "none";}
 			else 	document.getElementById('lbitr').style.display = "inline-block";
 			document.getElementById('bitr').innerHTML = arr["bitr"].replace(/\\/g,"") + " kB/s";
 			if (arr["bitr"] =="") document.getElementById('bitr').innerHTML="";
-			if ((arr["not1"] =="")&& (arr["not2"] ==""))	document.getElementById('lnot1').style.display = "none";
+			if (((arr["not1"] =="")&& (arr["not2"] ==""))||(!document.getElementById('Full').checked))	document.getElementById('lnot1').style.display = "none";
 			else 	document.getElementById('lnot1').style.display = "inline-block";	
 			document.getElementById('not1').innerHTML = arr["not1"].replace(/\\/g,"").replace(/^<BR>/,"");
 			document.getElementById('not2').innerHTML = arr["not2"].replace(/\\/g,"");
-			if (arr["genre"] =="")	document.getElementById('lgenre').style.display = "none";
+			if ((arr["genre"] =="")||(!document.getElementById('Full').checked))
+				document.getElementById('lgenre').style.display = "none";
 			else 	document.getElementById('lgenre').style.display = "inline-block";	
 			document.getElementById('genre').innerHTML = arr["genre"].replace(/\\/g,"");
-			if (arr["url1"] =="")	document.getElementById('lurl').style.display = "none";
-			else 	document.getElementById('lurl').style.display = "inline-block";
-			document.getElementById('url1').innerHTML = arr["url1"].replace(/\\/g,"");
-			document.getElementById('url2').href = arr["url1"].replace(/\\/g,"");
+			if (arr["url1"] =="")
+			{	
+				document.getElementById('lurl').style.display = "none";
+				document.getElementById('icon').style.display = "none";
+			}	
+			else 
+			{	
+				document.getElementById('lurl').style.display = "inline-block";
+				document.getElementById('icon').style.display = "inline-block";
+				$url = arr["url1"].replace(/\\/g,"").replace(/ /g,"");
+				if ($url == 'http://www.icecast.org/') 
+					document.getElementById('icon').src = "/logo.png";
+				else document.getElementById('icon').src =  "http://www.google.com/s2/favicons?domain_url="+$url;
+			}	
+			$url = arr["url1"].replace(/\\/g,"");
+			document.getElementById('url1').innerHTML = $url;
+			document.getElementById('url2').href = $url;
 			document.getElementById('meta').innerHTML = arr["meta"].replace(/\\/g,"");
+			setMainHeight("tab-content1"); 
 }	
 function soundResp(arr) {			
 			document.getElementById('vol_range').value = arr["vol"].replace(/\\/g,"");
@@ -187,21 +283,28 @@ function onRangeChangeSpatial($range, $spanid, $nosave) {
 	document.getElementById($spanid).innerHTML = label;
 	if( typeof($nosave) == 'undefined' )saveSoundSettings();
 }
+function logValue(value) {
+//Log(128/(Midi Volume + 1)) * (-10) * (Max dB below 0/(-24.04))
+	var log = Number(value )+ 1;
+	var val= Math.round((Math.log10(255/log) * 105.54571334));
+//	console.log("Value= "+value+"   log de val="+log+" "+255/log +"  = "+Math.log10(255/log)  +"   new value= "+val );
+	return val;
+}
 function onRangeVolChange($value,$local) {
-	var val = document.getElementById('vol_range').max -$value;
-	document.getElementById('vol1_span').innerHTML = (val * -0.5) + " dB";
-	document.getElementById('vol_span').innerHTML = (val * -0.5) + " dB";
+	var value = logValue($value);
+	document.getElementById('vol1_span').innerHTML = (value * -0.5) + " dB";
+	document.getElementById('vol_span').innerHTML = (value * -0.5) + " dB";
 	document.getElementById('vol_range').value = $value;
 	document.getElementById('vol1_range').value = $value;
 //	checkwebsocket();
 		 if ($local &&websocket.readyState == websocket.OPEN) websocket.send("wsvol=" + $value+"&");
-	if ($local)
+/*	if ($local)
 	{
 		xhr = new XMLHttpRequest();
 		xhr.open("POST","soundvol",false);
 		xhr.setRequestHeader(content,ctype);
 		xhr.send(  "vol=" + $value+"&");
-	}
+	}*/
 }
 function wifi(valid) {
 	xhr = new XMLHttpRequest();
@@ -239,6 +342,7 @@ function instantPlay() {
 }
 function playStation() {
 	checkwebsocket();
+	mpause();
 	select = document.getElementById('stationsSelect');
 	localStorage.setItem('selindexstore', select.options.selectedIndex.toString());
 	xhr = new XMLHttpRequest();
@@ -252,6 +356,7 @@ function playStation() {
 function stopStation() {
 	var select = document.getElementById('stationsSelect');
 	checkwebsocket();
+	mstop();
 	localStorage.setItem('selindexstore', select.options.selectedIndex.toString());
 	xhr = new XMLHttpRequest();
 	xhr.open("POST","stop",false);
@@ -343,7 +448,6 @@ function clearList() {
 function downloadStations()
 {
 	var arr,reader,lines,line,file;
-	eprogress = document.getElementById('progress');
 	/*var textArea = document.getElementById("my-text-area");
 	var arrayOfLines = textArea.value.split("\n"); // arrayOfLines is array where every element is string of one line*/
 	if (window.File && window.FileReader && window.FileList && window.Blob) {

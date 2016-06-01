@@ -6,6 +6,7 @@
 
 #define METADATA 9
 #define METAINT 8
+#define BITRATE 5
 #define METANAME 0
 #define ICY_HEADERS_COUNT 9
 #define ICY_HEADER_COUNT 10
@@ -51,4 +52,5 @@ void clientDisconnect();
 void clientTask(void *pvParams);
 void vsTask(void *pvParams) ;
 void wsVol(char* vol);
+void wsMonitor();
 #endif

@@ -40,6 +40,10 @@ void cb(sc_status stat, void *pdata)
 void uartInterfaceTask(void *pvParameters) {
 	char tmp[64];
 	bool conn = false;
+/*	int uxHighWaterMark;
+	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+	printf("watermark wsTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
+*/
 	int t = 0;
 	for(t = 0; t<64; t++) tmp[t] = 0;
 	t = 0;
@@ -59,7 +63,7 @@ void uartInterfaceTask(void *pvParameters) {
 	wifi_station_get_config_default(config);
 
 		
-	if ((strlen(device->ssid)==0)||(device->ssid[0]==0xff)||(device->ipAddr[0] ==0)) // first use
+	if ((strlen(device->ssid)==0)||(device->ssid[0]==0xff)/*||(device->ipAddr[0] ==0)*/) // first use
 	{
 		printf("first use\n");
 		IP4_ADDR(&(info->ip), 192, 168, 1, 254);
@@ -75,22 +79,18 @@ void uartInterfaceTask(void *pvParameters) {
 		saveDeviceSettings(device);	
 	}
 	
+		IP4_ADDR(&(info->ip), device->ipAddr[0], device->ipAddr[1],device->ipAddr[2], device->ipAddr[3]);
+		IP4_ADDR(&(info->netmask), device->mask[0], device->mask[1],device->mask[2], device->mask[3]);
+		IP4_ADDR(&(info->gw), device->gate[0], device->gate[1],device->gate[2], device->gate[3]);
+
+		strcpy(config->ssid,device->ssid);
+		strcpy(config->password,device->pass);
+		wifi_station_set_config(config);
 	
 	if (!device->dhcpEn) {
 //		if ((strlen(device->ssid)!=0)&&(device->ssid[0]!=0xff)&&(!device->dhcpEn))
 //			conn = true;	//static ip
 		wifi_station_dhcpc_stop();
-		IP4_ADDR(&(info->ip), device->ipAddr[0], device->ipAddr[1],device->ipAddr[2], device->ipAddr[3]);
-		IP4_ADDR(&(info->netmask), device->mask[0], device->mask[1],device->mask[2], device->mask[3]);
-		IP4_ADDR(&(info->gw), device->gate[0], device->gate[1],device->gate[2], device->gate[3]);
-
-/*		IP4_ADDR(&(info->ip),  192, 168, 10, 100);
-		IP4_ADDR(&(info->netmask), device->mask[0], device->mask[1],device->mask[2], device->mask[3]);
-		IP4_ADDR(&(info->gw), 192, 168, 10, 1);
-*/
-		strcpy(config->ssid,device->ssid);
-		strcpy(config->password,device->pass);
-		wifi_station_set_config(config);
 		wifi_set_ip_info(STATION_IF, info);
 	} 
 	printf(" Station Ip: %d.%d.%d.%d\n",(info->ip.addr&0xff), ((info->ip.addr>>8)&0xff), ((info->ip.addr>>16)&0xff), ((info->ip.addr>>24)&0xff));
@@ -101,8 +101,7 @@ void uartInterfaceTask(void *pvParameters) {
 	wifi_station_connect();
 	while ((wifi_station_get_connect_status() != STATION_GOT_IP)&&(!conn))
 	{	
-
-	printf("\nIn I: %d status: %d\n",i,wifi_station_get_connect_status());
+		printf("\nIn I: %d status: %d\n",i,wifi_station_get_connect_status());
 			FlashOn = FlashOff = 20;
 //			while (wifi_station_get_connect_status() != STATION_GOT_IP) 
 			{	
@@ -175,6 +174,9 @@ void uartInterfaceTask(void *pvParameters) {
 			if(t == 64) t = 0;
 		}
 		checkCommand(t, tmp);
+/*	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+	printf("watermark uartTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
+*/		
 		for(t = 0; t<64; t++) tmp[t] = 0;
 		t = 0;
 		vTaskDelay(20); // 250ms
@@ -204,6 +206,7 @@ void testtask(void* p) {
 void user_init(void)
 {
 //	REG_SET_BIT(0x3ff00014, BIT(0));
+//	system_update_cpu_freq(SYS_CPU_160MHZ);
 //	system_update_cpu_freq(160); //- See more at: http://www.esp8266.com/viewtopic.php?p=8107#p8107
     Delay(300);
 	UART_SetBaudrate(0,115200);
@@ -216,10 +219,10 @@ void user_init(void)
 	Delay(100);	
 	TCP_WND = 2 * TCP_MSS;
 
-	xTaskCreate(testtask, "t0", 176, NULL, 1, NULL); // DEBUG/TEST
-	xTaskCreate(uartInterfaceTask, "t1", 254, NULL, 2, NULL);
-	xTaskCreate(clientTask, "t3", 800, NULL, 5, NULL);
-	xTaskCreate(serverTask, "t2", 300, NULL, 3, NULL);
-	xTaskCreate(vsTask, "t4", 512, NULL,4, NULL);
+	xTaskCreate(testtask, "t0", 90, NULL, 1, NULL); // DEBUG/TEST
+	xTaskCreate(uartInterfaceTask, "t1", 240, NULL, 2, NULL);
+	xTaskCreate(clientTask, "t3", 840, NULL, 5, NULL);
+	xTaskCreate(serverTask, "t2", 200, NULL, 4, NULL);
+	xTaskCreate(vsTask, "t4", 360, NULL,4, NULL); //task fixed
 }
 

@@ -1,5 +1,6 @@
 #include "webserver.h"
 #include "serv-fs.h"
+char lowmemory[] = { "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 10\r\n\r\n\", \"low memory\")"};
 
 xSemaphoreHandle semclient = NULL ;
 
@@ -142,6 +143,7 @@ ICACHE_FLASH_ATTR char* getParameterFromResponse(char* param, char* data, uint16
 			int i;
 			for(i=0; i<(p_end-p + 1); i++) t[i] = 0;
 			strncpy(t, p, p_end-p);
+//			printf("getParam: \"%s\"\n",t);
 /*			if (strstr(t, "%2F")!=NULL)
 			{
 				printf(" replace %s\n",t);
@@ -158,49 +160,42 @@ ICACHE_FLASH_ATTR void respOk(int conn)
 		write(conn, resp, strlen(resp));
 }
 
-// treat the received message
-void websockethandle(int socket, wsopcode_t opcode, uint8_t * payload, size_t length)
-{
-	bool changed = false;
-	char* answer;
-	struct device_settings *device;
-	char* vol = getParameterFromResponse("wsvol=", payload, length);
-		device = getDeviceSettings();
-		changed = false;
-		if(vol) {
-			VS1053_SetVolume(254-atoi(vol));
-			if (device->vol != (254-atoi(vol)))
-			{ 
-				device->vol = (254-atoi(vol)); 
-				saveDeviceSettings(device);
-			}
-		}
-		infree(device);	
-		answer = inmalloc(16);
-		if (answer != NULL)
-		{	
-			if(vol != NULL)
-			{	
-				sprintf(answer,"{\"wsvol\":\"%s\"}",vol);
-				websocketlimitedbroadcast(socket,answer, strlen(answer));
-				infree(answer);
-			} 
-		}	
-		else printf("ws inmalloc fails\n");	
-		if (vol) infree(vol);
-
-}
-
 ICACHE_FLASH_ATTR void setVolume(char* vol) {
 		struct device_settings *device;
 		device = getDeviceSettings();
 		if(vol) {
-			VS1053_SetVolume(254-atoi(vol));
-			if (device->vol != (254-atoi(vol))){ device->vol = (254-atoi(vol));saveDeviceSettings(device);}
-//			infree(vol);
+//			printf("setVol: \"%s\"\n",vol);
+			VS1053_SetVolume(atoi(vol));
+			if (device != NULL)
+				if (device->vol != (atoi(vol))){ device->vol = (atoi(vol));saveDeviceSettings(device);}
 		}
-		infree(device);			
+		if (device != NULL) infree(device);			
 }
+
+// treat the received message
+void websockethandle(int socket, wsopcode_t opcode, uint8_t * payload, size_t length)
+{
+	char* answer;
+	struct device_settings *device;
+	char* vol;
+	vol = getParameterFromResponse("wsvol=", payload, length);
+	if (vol)
+	{	
+		setVolume(vol);
+		
+		answer = inmalloc(16);
+		if (answer != NULL)
+		{	
+			sprintf(answer,"{\"wsvol\":\"%s\"}",vol);
+			websocketlimitedbroadcast(socket,answer, strlen(answer));
+			infree(answer);
+		}	
+		else printf("ws inmalloc fails\n");	
+		infree(vol);
+	}
+	if (getParameterFromResponse("monitor", payload, length)) wsMonitor();
+}
+
 
 	
 ICACHE_FLASH_ATTR void playStation(char* id) {
@@ -257,6 +252,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 		if(data_size > 0) {
 //			char* vol = getParameterFromResponse("vol=", data, data_size);
 			char * vol = data+4;
+			data[data_size-1] = 0;
 //			printf("/sounvol vol: %s num:%d \n",vol, atoi(vol));
 			setVolume(vol); 
 		}
@@ -388,7 +384,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 	} else if(strcmp(name, "/icy") == 0)	
 	{	
 //		printf("icy vol \n");
-		char vol[5]; sprintf(vol,"%d",(254-VS1053_GetVolume()));
+		char vol[5]; sprintf(vol,"%d",(VS1053_GetVolume()));
 		char treble[5]; sprintf(treble,"%d",VS1053_GetTreble());
 		char bass[5]; sprintf(bass,"%d",VS1053_GetBass());
 		char tfreq[5]; sprintf(tfreq,"%d",VS1053_GetTrebleFreq());
@@ -541,9 +537,9 @@ ICACHE_FLASH_ATTR bool httpServerHandleConnection(int conn, char* buf, uint16_t 
 			pvParams->buf = pbuf;
 			pvParams->len = buflen;
 //			printf("GET websocket\n");
-			while (xTaskCreate( websocketTask,"t11",480,(void *) pvParams,2, NULL )!= pdPASS) 
+			while (xTaskCreate( websocketTask,"t11",320,(void *) pvParams,2, NULL )!= pdPASS) 
 			{
-				printf("xTaskCreate  failed. Retry\n");
+				printf("ws xTaskCreate  failed. Retry\n");
 				vTaskDelay(100);
 			}
 
@@ -595,6 +591,7 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
     timeout.tv_sec = 1000; // bug *1000 for seconds
     timeout.tv_usec = 0;
 	int recbytes ,recb,i;
+//	portBASE_TYPE uxHighWaterMark;
 	int  client_sock =  (int)pvParams;
 	uint16_t reclen = 	RECLEN;	
     char *buf = (char *)inmalloc(reclen+1);
@@ -652,17 +649,15 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 					}
 				} 
 				else { 
-					vTaskDelay(3);
+					
 //					printf ("Server: try receive more for end:%d bytes\n", recbytes);					
 					if (reclen == RECLEN) 
 					{
-//						printf ("Server: realloc plus %x\n",buf);
 						buf = realloc(buf,(2*RECLEN) +1);
-						if (buf == NULL) {printf ("Server: realloc plus fails\n");break;}
-//						printf ("Server: realloc plus %x\n",buf);
+						if (buf == NULL) {printf ("Server: realloc more fails\n");break;}
 						reclen = 2*RECLEN;
 					}	
-					while(((recb= read(client_sock , buf+recbytes, reclen-recbytes))==0));
+					while(((recb= read(client_sock , buf+recbytes, reclen-recbytes))==0))vTaskDelay(1);
 //					printf ("Server: received more for end now: %d bytes\n", recbytes+recb);
 					if (recb < 0) {
 						if (errno != EAGAIN )
@@ -696,16 +691,21 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 		}
 	}
 	xSemaphoreGive(semclient);	
+/*	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+	printf("watermark serverClientTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);	
+*/
+
 //	printf("Client exit socket:%d result %d \n",client_sock,result);
 	vTaskDelete( NULL );	
 }	
 ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 	struct sockaddr_in server_addr, client_addr;
 	int server_sock, client_sock;
-	portBASE_TYPE xReturned;
 	socklen_t sin_size;
+//	portBASE_TYPE uxHighWaterMark;
     semclient = xSemaphoreCreateCounting(2,2); 
 	websocketinit();
+	int stack = 320;
 	
 	while (1) {
         bzero(&server_addr, sizeof(struct sockaddr_in));
@@ -741,10 +741,21 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 					vTaskDelay(100);					
                 } else
 				{
+					if (xPortGetFreeHeapSize( ) < 3000)
+					{
+						printf ("Low memory %d\n",xPortGetFreeHeapSize( ));
+						vTaskDelay(800);	
+						printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
+						if (xPortGetFreeHeapSize( ) < 3000)
+						{
+							printf ("Low memory 2%d\n",xPortGetFreeHeapSize( ));					
+							write(client_sock, lowmemory, strlen(lowmemory));
+							close (client_sock);
+						}	
+					} else
 					while (1) 
 					{
-						int stack = 480;
-//						printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
+						printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
 //						printf ("Accept socket %d\n",client_sock);
 						if (xSemaphoreTake(semclient,400))
 						{ 
@@ -752,19 +763,21 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 							"t10",
 							stack,
 							(void *) client_sock,
-							2, 
+							3, 
 							NULL ) != pdPASS) 
 							{
 								printf("xTaskCreate 1 failed for stack %d. Retrying...\n",stack);
 //								stack -=10;
-								vTaskDelay(100);
+								vTaskDelay(200);
 							}
-
 							break;
-						} else {vTaskDelay(20);printf("client busy. Retrying...\n");}
+						} else {vTaskDelay(20);printf("server busy. Retrying...\n");}
 					}
-				}			
-            }
+				}	
+/*				uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+				printf("watermark serverTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
+*/				
+			}
         } while (0);
     }
 }

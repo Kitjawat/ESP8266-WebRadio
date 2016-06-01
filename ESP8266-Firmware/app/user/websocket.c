@@ -121,7 +121,7 @@ uint32_t decodeHttpMessage (char * inputMessage, char * outputMessage)
 bool websocketnewclient(int socket)
 {
 	int i ;
-	printf("ws newclient:%d\n",socket);
+//	printf("ws newclient:%d\n",socket);
 	for (i = 0;i<NBCLIENT;i++) if (webserverclients[i].socket == socket) return true;
 	else
 	for (i = 0;i<NBCLIENT;i++) if (webserverclients[i].socket == -1) 
@@ -136,7 +136,7 @@ bool websocketnewclient(int socket)
 void websocketremoveclient(int socket)
 {
 	int i ;
-	printf("ws removeclient:%d\n",socket);
+//	printf("ws removeclient:%d\n",socket);
 	for (i = 0;i<NBCLIENT;i++) if (webserverclients[i].socket == socket) 
 	{
 		webserverclients[i].socket = -1;
@@ -319,7 +319,11 @@ void websocketparsedata(int socket, char* buf, int len)
 //write a txt data
 void websocketwrite(int socket, char* buf, int len)
 {
+//	portBASE_TYPE uxHighWaterMark;	
 	sendFrame(socket, WSop_text, buf , len );
+/*	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+	printf("watermark wsTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
+*/	
 }	
 //broadcast a txt data to all clients
 void websocketbroadcast(char* buf, int len)
@@ -347,6 +351,7 @@ void websocketlimitedbroadcast(int socket,char* buf, int len)
 ICACHE_FLASH_ATTR void websocketTask(void* pvParams) {
 	// retrieve parameters
 	struct websocketparam* param = (struct websocketparam*) pvParams;
+//	portBASE_TYPE uxHighWaterMark;
 	int conn  = param->socket;
 //	printf("ws task entry socket:%d\n",conn);
 	char* bufin = param->buf;
@@ -394,5 +399,8 @@ ICACHE_FLASH_ATTR void websocketTask(void* pvParams) {
 	vTaskDelay(20);	
 	close(conn);
 //	printf("ws task exit socket:%d\n",conn);
+/*	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+	printf("watermark wsTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
+*/	
 	vTaskDelete( NULL );	
 }

@@ -5,6 +5,8 @@
 #include "string.h"
 #include "stdlib.h"
 #include "eeprom.h"
+
+
 extern void wsVol(char* vol);
 
 extern void playStation(char* id);
@@ -263,7 +265,7 @@ ICACHE_FLASH_ATTR void clientList()
 			printf("%3d: %s, %s:%d%s\n",i,si->name,si->domain,si->port,si->file);	
 		free(si);
 	}	
-	printf("\n#CLI.LIST#\n");
+	printf("\n##CLI.LIST#\n");
 }
 
 ICACHE_FLASH_ATTR void clientVol(char *s)
@@ -286,7 +288,7 @@ ICACHE_FLASH_ATTR void clientVol(char *s)
         uint8_t tmp;
         for(tmp=0; tmp<(t_end-t+1); tmp++) vol[tmp] = 0;
         strncpy(vol, t+2, (t_end-t));
-		if ((atoi(vol)>=100)&&(atoi(vol)<=254))
+		if ((atoi(vol)>=0)&&(atoi(vol)<=254))
 		{	
 			setVolume(vol);
 			wsVol(vol);		}	
@@ -316,4 +318,5 @@ ICACHE_FLASH_ATTR void checkCommand(int size, char* s)
     else if(strcmp(tmp, "sys.erase") == 0) eeEraseAll();
 	else printInfo(tmp);
 	free(tmp);
+	
 }

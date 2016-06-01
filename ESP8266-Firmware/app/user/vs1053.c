@@ -16,6 +16,7 @@
 #include "stdio.h"
 #include "spi.h"
 #include "osapi.h"
+#include <math.h>
 
 extern volatile uint32_t PIN_OUT;
 extern volatile uint32_t PIN_OUT_SET;
@@ -219,7 +220,7 @@ ICACHE_FLASH_ATTR int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity){
 	if(quantity ==0) return 0;
 	spi_take_semaphore();
 	VS1053_SPI_SpeedUp();
-	while(VS1053_checkDREQ() == 0) vTaskDelay(1);
+	while(VS1053_checkDREQ() == 0) ;//vTaskDelay(1);
 	SDI_ChipSelect(SET);
 	int o = 0;
 	while(quantity)
@@ -249,7 +250,15 @@ ICACHE_FLASH_ATTR void VS1053_SoftwareReset(){
 }
 
 ICACHE_FLASH_ATTR uint8_t VS1053_GetVolume(){
-	return ( VS1053_ReadRegister(SPI_VOL) & 0x00FF );
+uint8_t i,j;
+uint8_t value =  VS1053_ReadRegister(SPI_VOL) & 0x00FF;
+	for (i = 0;i< 255; i++)
+	{
+		j = (log10(255/((float)i+1)) * 105.54571334);
+//		printf("i=%d  j=%d value=%d\n",i,j,value);
+		if (value == j ){ return i;}
+	}	
+	return 127;
 }
 /**
  * Function sets the same volume level to both channels.
@@ -257,7 +266,9 @@ ICACHE_FLASH_ATTR uint8_t VS1053_GetVolume(){
  * 		of 0.5dB. Maximum volume is 0 and silence is 0xFEFE.
  */
 ICACHE_FLASH_ATTR void VS1053_SetVolume(uint8_t xMinusHalfdB){
-	VS1053_WriteRegister(SPI_VOL,xMinusHalfdB,xMinusHalfdB);
+uint8_t value = (log10(255/((float)xMinusHalfdB+1)) * 105.54571334);	
+//printf("setvol: %d\n",value);
+	VS1053_WriteRegister(SPI_VOL,value,value);
 }
 
 /**

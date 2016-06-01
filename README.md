@@ -1,6 +1,13 @@
 # ** ESP8266 & VS1053 Wifi WebRadio** #
 ###Ka-Radio, a WiFi shoutcast player based on ESP8266 and VS1053b chips
 ##Basic informations
+####Version: 1.0.3<br />
+Added:<br/>
+New html look,<br/>
+Volume slider is now logarithmic,<br/>
+Monitoring of the current station in the browser, usefull for mobile<br/>
+Optimised ram usage.<br/>
+It seems that the 320KB/s is still too quick for the processor. I cannot recommand it, but 256kB/s is perfect.<br/>
 ####Version: 1.0.2<br />
 Added: "Now playing" informations are now given with the help of a websocket. The display is immediatly updated on the browser.<br/>
 Reading 320Kb/s is improved<br/>

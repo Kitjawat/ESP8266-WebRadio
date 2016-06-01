@@ -80,6 +80,11 @@ html,body {
 	font:15px "Trebuchet MS";
 	width:98%
 }
+
+#CONTENT iframe {
+	height:400px;
+	width:100%;
+}
 .tabs span.bold {
 	font-weight:900;
 	width:140px;
@@ -95,6 +100,27 @@ html,body {
 	width:50px;
 	display:inline-block;
 }
+.tabs span.bold3 {
+	font-size:170%;
+	width:98%;
+	display:inline-block;
+    -webkit-animation:mymove 1s infinite alternate;
+	/* Chrome, Safari, Opera */
+    animation: mymove 1s infinite alternate;
+}
+
+/* Chrome, Safari, Opera */
+@-webkit-keyframes mymove {
+    from {color:#0;}
+    to {color:#39c;}
+}
+/* Standard syntax */
+@keyframes mymove {
+    from {color:#0;}
+    to {color:#39c;}
+}
+
+
 .tabs {
 	width:calc(100%-20px);
 	float:none;
@@ -110,26 +136,45 @@ html,body {
 	top:-9999px;
 	left:-9999px;
 }
+.tabs [id^="vol1_range"] input[type=range] {
+	font-weight:bold;
+	min-width: 200px;	
+	background-color:#F8F8FF
+}
 .tabs input[type=range] {
 	font-weight:bold;
 	min-width: 280px;	
-	background-color:#F8F8FF
+	background-color:#F0F0FF
+    background: -webkit-linear-gradient( #F0F0FF, #D8D8DF);
+    background:    -moz-linear-gradient( #F0F0FF, #D8D8DF);
+    background:     -ms-linear-gradient( #F0F0FF, #D8D8DF);
+    background:      -o-linear-gradient( #F0F0FF, #D8D8DF);
+    background:         linear-gradient( #F0F0FF, #D8D8DF);
+	border-radius: 5px;	
 }
 .tabs input[type=text] {
 	background-color:#F8F8FF
+
 }
 .tabs input[type="button"] {
 	font-size:14px;
 	min-width: 100px;
 	height:40px;
- background-color:#F0F0F0; 
+	background-color:#F0F0FF
+    background: -webkit-linear-gradient( #F0F0FF, #D8D8DF);
+    background:    -moz-linear-gradient( #F0F0FF, #D8D8DF);
+    background:     -ms-linear-gradient( #F0F0FF, #D8D8DF);
+    background:      -o-linear-gradient( #F0F0FF, #D8D8DF);
+    background:         linear-gradient( #F0F0FF, #D8D8DF);
+	border-radius: 5px;
 }
 .tabs select {
 	min-width: 230px;
-	background-color:#f8fFfF;
+	background-color:#f8f8fF;
 	border:1px solid #111;
 	border:1px solid #ccc;
 	height:30px;
+	border-radius: 5px;
 }
 .tabs label {
 	display:run-in;
@@ -143,10 +188,11 @@ html,body {
 	-moz-transition:all .2s ease-in-out;
 	-o-transition:all .2s ease-in-out;
 	-webkit-transition:all .2s ease-in-out;
-	transition:all .2s ease-in-out
+	transition:all .2s ease-in-out;
+	border-radius: 5px;
 }
 .tabs label:hover {
-	background:#3cc
+	background:#3cc;
 }
 .tabs .tab-content {
 	z-index:2;
@@ -159,14 +205,15 @@ html,body {
 	top:53px;
 	left:0;
 	border-color:#185213;
-	border-top:solid 1px
+	border-top:solid 1px;
 }
 .tabs [id^="tab"]:checked+label {
 	top:0;
-	padding:14px 14px;
-	font-size:18px;
+	padding:12px 14px;
+	font-size:16px;
 	color:#EEE;
-	background:#38c
+	background:#38c;
+	border-radius: 5px;
 }
 .tabs [id^="tab"]:checked ~ [id^="tab-content"] {
 	display:block;

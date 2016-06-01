@@ -22,6 +22,7 @@ struct servFile
 #include "../../webpage/logo"
 #include "../../webpage/favicon"
 
+
 const struct servFile faviconFile = {
 	"/favicon.png",
 	"image/png",
