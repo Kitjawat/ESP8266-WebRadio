@@ -1,3 +1,7 @@
+/*
+ * Copyright 2016 karawin (http://www.karawin.fr)
+*/
+
 #include "webclient.h"
 #include "webserver.h"
 

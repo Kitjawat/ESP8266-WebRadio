@@ -1,3 +1,7 @@
+/******************************************************************************
+ * Copyright 2015 Piotr Sperka (http://www.piotrsperka.info)/*
+ * Copyright 2016 karawin (http://www.karawin.fr)
+*/
 #include "interface.h"
 #include "user_interface.h"
 #include "osapi.h"

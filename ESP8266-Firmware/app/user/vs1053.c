@@ -4,6 +4,10 @@
   * @author  Piotr Sperka
   * @date    07.08.2015
   * @brief   This file provides VS1053 usage and control functions. Based on VS1003 library by Przemyslaw Stasiak.
+/*
+ * Copyright 2016 karawin (http://www.karawin.fr)
+ * added control treble, bass and spacialisation
+*/
   ***********************************************************************************************************************
 */
 
@@ -220,7 +224,7 @@ ICACHE_FLASH_ATTR int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity){
 	if(quantity ==0) return 0;
 	spi_take_semaphore();
 	VS1053_SPI_SpeedUp();
-	while(VS1053_checkDREQ() == 0) ;//vTaskDelay(1);
+	while(VS1053_checkDREQ() == 0) ;
 	SDI_ChipSelect(SET);
 	int o = 0;
 	while(quantity)
@@ -346,6 +350,7 @@ ICACHE_FLASH_ATTR void VS1053_SetBassFreq(uint8_t xTenHz){
 	if (xTenHz >=2 && xTenHz <= 15)
 		VS1053_WriteRegister(SPI_BASS, MaskAndShiftRight(bassReg,0xFF00,8), (bassReg & 0x00F0) | xTenHz );
 }
+
 ICACHE_FLASH_ATTR uint8_t	VS1053_GetBassFreq(){
 	return ( (VS1053_ReadRegister(SPI_BASS) & 0x000F) );
 }
@@ -361,8 +366,6 @@ ICACHE_FLASH_ATTR void VS1053_SetSpatial(uint8_t num){
 	if (num >=0 && num <= 3)
 	{	
 		num = (((num <<2)&8) | (num&1))<<4;
-//		printf("SetSpatial num: %x\n",num);
-//		printf("SetSpatial Mode: 0x%x, after: 0x%02x%02x\n",spatial, MaskAndShiftRight(spatial,0xFF00,8), (spatial & 0x006F) | num );
 		VS1053_WriteRegister(SPI_MODE, MaskAndShiftRight(spatial,0xFF00,8), (spatial & 0x006F) | num );
 	}	
 }
@@ -419,6 +422,7 @@ ICACHE_FLASH_ATTR uint16_t VS1053_GetSampleRate(){
 	return (VS1053_ReadRegister(SPI_AUDATA) & 0xFFFE);
 }
 
+/* to start and stop a new stream */
 ICACHE_FLASH_ATTR void VS1053_flush_cancel(uint8_t mode) {  // 0 only fillbyte  1 before play    2 cancel play
 //  int8_t endFillByte = (int8_t) (Mp3ReadWRAM(para_endFillByte) & 0xFF);
 	VS1053_WriteRegister(SPI_WRAMADDR,MaskAndShiftRight(para_endFillByte,0xFF00,8), (para_endFillByte & 0x00FF) );

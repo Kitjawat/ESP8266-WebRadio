@@ -1,5 +1,6 @@
 /******************************************************************************
  * Copyright 2015 Piotr Sperka (http://www.piotrsperka.info)
+ * Copyright 2016 karawin (http://www.karawin.fr)
  *
  * FileName: user_main.c
  *

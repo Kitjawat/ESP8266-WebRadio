@@ -1,3 +1,6 @@
+/*
+ * Copyright 2016 karawin (http://www.karawin.fr)
+*/
 #include "webserver.h"
 #include "serv-fs.h"
 char lowmemory[] = { "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 10\r\n\r\n\", \"low memory\")"};
@@ -19,47 +22,7 @@ void infree(void *p)
 //	printf ("free of %x,  Heap size: %d\n",p,xPortGetFreeHeapSize( ));
 }	
 
-/*ICACHE_FLASH_ATTR char* str_replace ( char *string, const char *substr, const char *replacement, int length ){
-  char *tok = NULL;
-  char *newstr = NULL;
-  char *oldstr = NULL;
-// if either substr or replacement is NULL, duplicate string a let caller handle it 
-  if ( substr == NULL ) {
-	return string;
-  }
-  if( replacement == NULL ) replacement = "";
-//  newstr = my_strdup(string, length);
-  infree(string);
-  newstr = string;
-  while ( (tok = strstr ( newstr, substr )))
-  {
-    oldstr = newstr;
-	newstr = NULL;
-	while (newstr == NULL)
-	{
-       newstr = inmalloc ( strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) + 1 );
-//failed to alloc mem, infree old string and return NULL 
-      if ( newstr == NULL ){
-		int i = 0;
-		do { 
-        i++;		
-		printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
-		vTaskDelay(10);
- 	    printf("strreplace inmalloc fails for %d\n",strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) + 1 );
- 		}
-		while (i<2);
-		if (i >=2) {  return oldstr;}
-      } 
-	}
-    memcpy ( newstr, oldstr, tok - oldstr );
-    memcpy ( newstr + (tok - oldstr), replacement, strlen ( replacement ) );
-    memcpy ( newstr + (tok - oldstr) + strlen( replacement ), tok + strlen ( substr ), strlen ( oldstr ) - strlen ( substr ) - ( tok - oldstr ) );
-    memset ( newstr + strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) , 0, 1 );
-    infree (oldstr);
-  }
-  return newstr;
-}
-*/
+
 
 ICACHE_FLASH_ATTR struct servFile* findFile(char* name)
 {

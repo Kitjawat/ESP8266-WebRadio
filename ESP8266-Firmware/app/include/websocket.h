@@ -3,6 +3,9 @@
 Inspirated by:
  * Copyright (c) 2015 Markus Sattler. All rights reserved.
  * This file is part of the WebSockets for Arduino.
+/*
+ * Copyright 2016 karawin (http://www.karawin.fr)
+*/
 */
 #ifndef __WEBSOCKET_H__
 #define __WEBSOCKET_H__
