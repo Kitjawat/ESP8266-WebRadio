@@ -106,7 +106,7 @@ ICACHE_FLASH_ATTR char* getParameterFromResponse(char* param, char* data, uint16
 			int i;
 			for(i=0; i<(p_end-p + 1); i++) t[i] = 0;
 			strncpy(t, p, p_end-p);
-//			printf("getParam: \"%s\"\n",t);
+//			printf("getParam: in: \"%s\"   \"%s\"\n",data,t);
 /*			if (strstr(t, "%2F")!=NULL)
 			{
 				printf(" replace %s\n",t);
@@ -138,7 +138,7 @@ ICACHE_FLASH_ATTR void setVolume(char* vol) {
 // treat the received message
 void websockethandle(int socket, wsopcode_t opcode, uint8_t * payload, size_t length)
 {
-	char* answer;
+	char answer[16];
 	struct device_settings *device;
 	char* vol;
 	vol = getParameterFromResponse("wsvol=", payload, length);
@@ -146,17 +146,18 @@ void websockethandle(int socket, wsopcode_t opcode, uint8_t * payload, size_t le
 	{	
 		setVolume(vol);
 		
-		answer = inmalloc(16);
-		if (answer != NULL)
-		{	
+//		answer = inmalloc(16);
+//		if (answer != NULL)
+//		{	
 			sprintf(answer,"{\"wsvol\":\"%s\"}",vol);
 			websocketlimitedbroadcast(socket,answer, strlen(answer));
-			infree(answer);
-		}	
-		else printf("ws inmalloc fails\n");	
+//			infree(answer);
+//		}	
+//		else printf("ws inmalloc fails\n");	
 		infree(vol);
 	}
-	if (getParameterFromResponse("monitor", payload, length)) wsMonitor();
+	vol = getParameterFromResponse("monitor", payload, length);
+	if (vol) {wsMonitor();infree(vol);}
 }
 
 
@@ -560,7 +561,7 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
     char *buf = (char *)inmalloc(reclen+1);
 	bool result = true;
 //	for (i = 0;i< reclen+1;i++) buf[i] = 0;
-//	printf("Client entry  socket:%x \n",client_sock);
+//	printf("Client entry  socket:%x  reclen:%d\n",client_sock,reclen+1);
 	if (buf != NULL)
 	{
 		memset(buf,0,reclen);

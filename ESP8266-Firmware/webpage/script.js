@@ -238,6 +238,7 @@ function soundResp(arr) {
 			onRangeChangeSpatial('spacial_range', 'spacial_span', true);
 }	
 function refresh() {
+	checkwebsocket();
 	xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4 && xhr.status == 200) {
@@ -626,6 +627,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		});
 	if (intervalid != 0)  window.clearInterval(intervalid);
 	loadStationsList(191);
+	checkwebsocket();
 	refresh();
 	wifi(0) ;
 	setMainHeight("tab-content1");

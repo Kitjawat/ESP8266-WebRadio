@@ -1,4 +1,4 @@
-update=07/04/2016 18:04:13
+update=01/06/2016 23:16:40
 version=1
 last_client=kicad
 [general]
@@ -84,3 +84,13 @@ LibName34=vs10xx
 LibName35=lm1117
 LibName36=23lcv1024
 LibName37=ne5532
+[schematic_editor]
+version=1
+PageLayoutDescrFile=
+PlotDirectoryName=
+SubpartIdSeparator=0
+SubpartFirstId=65
+NetFmtName=
+SpiceForceRefPrefix=0
+SpiceUseNetNumbers=0
+LabSize=60

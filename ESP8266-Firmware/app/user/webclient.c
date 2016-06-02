@@ -375,9 +375,8 @@ ICACHE_FLASH_ATTR bool clientParseHeader(char* s)
 				}
 				else // Numerical header field
 				{
-					if (metaint != NULL)
-						incfree (metaint);
-					metaint = (char*) incmalloc((len+1)*sizeof(char));
+					if (metaint == NULL)
+						metaint = (char*) incmalloc(10); // one for life
 					if (metaint != NULL)
 					{					
 						int i;
@@ -392,8 +391,9 @@ ICACHE_FLASH_ATTR bool clientParseHeader(char* s)
 			}
 		}
 	}
-	if (ret == true) wsHeaders();
+	if (ret == true) {wsHeaders();wsMonitor();}
 	xSemaphoreGive(sHeader);
+	
 	return ret;
 }
 
@@ -401,9 +401,8 @@ ICACHE_FLASH_ATTR void clientSetURL(char* url)
 {
 	int l = strlen(url)+1;
 	if (url[0] == 0xff) return; // wrong url
-	if (clientURL != NULL)
-		incfree(clientURL);
-	clientURL = (char*) incmalloc(l*sizeof(char));
+	if (clientURL == NULL)
+		clientURL = (char*) incmalloc(256); // only one malloc for the life
 	if(clientURL != NULL) 
 	{
 		strcpy(clientURL, url);
@@ -416,9 +415,8 @@ ICACHE_FLASH_ATTR void clientSetPath(char* path)
 {
 	int l = strlen(path)+1;
 	if (path[0] == 0xff) return; // wrong path
-	if (clientPath != NULL)
-		incfree(clientPath); 
-	clientPath = (char*) incmalloc(l*sizeof(char));
+	if (clientPath == NULL)
+		clientPath = (char*) incmalloc(256); // only one malloc for the life
 	if(clientPath != NULL)
 	{
 		strcpy(clientPath, path);
