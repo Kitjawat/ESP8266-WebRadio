@@ -363,7 +363,7 @@ ICACHE_FLASH_ATTR void websocketTask(void* pvParams) {
 	struct timeval timeout;      
     timeout.tv_sec = 1000; // bug *1000 for seconds
     timeout.tv_usec = 0;	
-	char *buf = (char *)zalloc(MAXDATA);
+	char *buf = (char *)malloc(MAXDATA);
 //	char buf[MAXDATA+1];
 	int32_t recbytes = 0;
 	bufin[buflen] = 0;
