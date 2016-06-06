@@ -237,15 +237,23 @@ ICACHE_FLASH_ATTR void clientSaveMetadata(char* s,int len,bool catenate)
 //		printf("clientsaveMeta t= 0x%x t_end= 0x%x  t=%s\n",t,t_end,t);
 		
 //		s = t;
-		if(header.members.mArr[METADATA] != NULL)	
-			incfree(header.members.mArr[METADATA]);
-		header.members.mArr[METADATA] = (char*)incmalloc((oldlen  +len+3)*sizeof(char));
+		if ((header.members.mArr[METADATA] != NULL)&&(catenate))
+		{
+			header.members.mArr[METADATA] = realloc(header.members.mArr[METADATA],(oldlen  +len+3)*sizeof(char));
+			printf("clientsaveMeta  s=\"%s\"  t=\"%s\"   meta=\"%s\"\n",s,t,header.members.mArr[METADATA]);
+		} else
+		{
+			if (header.members.mArr[METADATA] != NULL)
+				incfree(header.members.mArr[METADATA]);
+			header.members.mArr[METADATA] = (char*)incmalloc((len+3)*sizeof(char));
+		}
 		if(header.members.mArr[METADATA] == NULL) 
 			{printf("clientsaveMeta malloc fails\n"); return;}
 
 		header.members.mArr[METADATA][oldlen +len] = 0;
 		strncpy(&(header.members.mArr[METADATA][oldlen]), t,len);
 		header.members.mArr[METADATA] = stringify(header.members.mArr[METADATA],oldlen +len);
+		if (catenate)	printf("clientsaveMeta t=\"%s\"   meta=\"%s\"\n",t,header.members.mArr[METADATA]);
 		printf("##CLI.META#: %s\n",header.members.mArr[METADATA]);
 		char* title = incmalloc(strlen(header.members.mArr[METADATA])+15);
 		if (title != NULL)
@@ -654,6 +662,14 @@ IRAM_ATTR void vsTask(void *pvParams) {
 		{
 //			VS1053_SPI_SpeedDown();
 			vTaskDelay(20);
+/*			s = VS1053_GetVolume( );	
+			if(playing)
+			{
+				VS1053_SetVolume( 254);	
+				vTaskDelay(100);
+				VS1053_SetVolume( s);	
+			}
+*/			
 //	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
 //	printf("watermark vstask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);			
 		}	

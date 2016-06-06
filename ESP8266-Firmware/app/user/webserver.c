@@ -655,9 +655,9 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 		}
 	}
 	xSemaphoreGive(semclient);	
-/*	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-	printf("watermark serverClientTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);	
-*/
+//	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+//	printf("watermark serverClientTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);	
+
 
 //	printf("Client exit socket:%d result %d \n",client_sock,result);
 	vTaskDelete( NULL );	
@@ -669,7 +669,7 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 //	portBASE_TYPE uxHighWaterMark;
     semclient = xSemaphoreCreateCounting(2,2); 
 	websocketinit();
-	int stack = 320;
+	int stack = 360;
 	
 	while (1) {
         bzero(&server_addr, sizeof(struct sockaddr_in));
@@ -738,9 +738,9 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 						} else {vTaskDelay(20);printf("server busy. Retrying...\n");}
 					}
 				}	
-/*				uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-				printf("watermark serverTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
-*/				
+//				uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+//				printf("watermark serverTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
+				
 			}
         } while (0);
     }

@@ -2,6 +2,7 @@
 #include "flash.h"
 #include "stdio.h"
 #include "stdlib.h"
+#include "spi_flash.h"
 
 #define ICACHE_STORE_TYPEDEF_ATTR __attribute__((aligned(4),packed))
 #define ICACHE_STORE_ATTR __attribute__((aligned(4)))

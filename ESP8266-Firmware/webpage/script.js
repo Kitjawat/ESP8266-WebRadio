@@ -606,9 +606,9 @@ function getSelIndex() {
 }	*/
 function setMainHeight(name) {
 	var minh = window.innerHeight,
-		h = document.getElementById(name).offsetHeight + 200;
+		h = document.getElementById(name).scrollHeight + 200 ;
 	if(h<minh) h = minh;
-	document.getElementById("MAIN").style.height = h;
+	document.getElementById("MAIN").style.height = h +"px";
 //	checkwebsocket();
 }
 

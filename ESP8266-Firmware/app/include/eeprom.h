@@ -19,10 +19,10 @@ struct device_settings {
 };
 
 struct shoutcast_info {
-	char domain[73];
-	char file[116];
+	char domain[73]; //url
+	char file[116];  //path
 	char name[65];
-	uint16_t port;
+	uint16_t port;	//port
 };
 
 uint8_t eeGetByte(uint32_t address);

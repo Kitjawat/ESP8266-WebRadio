@@ -27,6 +27,7 @@
 #include "vs1053.h"
 
 #include "eeprom.h"
+void uart_div_modify(int no, unsigned int freq);
 
 	struct station_config config;
 	int FlashOn = 5,FlashOff = 5;
@@ -220,10 +221,10 @@ void user_init(void)
 	Delay(100);	
 	TCP_WND = 2 * TCP_MSS;
 
-	xTaskCreate(testtask, "t0", 90, NULL, 1, NULL); // DEBUG/TEST
-	xTaskCreate(uartInterfaceTask, "t1", 240, NULL, 2, NULL);
-	xTaskCreate(clientTask, "t3", 840, NULL, 5, NULL);
-	xTaskCreate(serverTask, "t2", 200, NULL, 4, NULL);
-	xTaskCreate(vsTask, "t4", 360, NULL,4, NULL); //task fixed
+	xTaskCreate(testtask, "t0", 175, NULL, 1, NULL); // DEBUG/TEST
+	xTaskCreate(uartInterfaceTask, "t1", 260, NULL, 2, NULL);
+	xTaskCreate(clientTask, "t3", 850, NULL, 5, NULL);
+	xTaskCreate(serverTask, "t2", 220, NULL, 4, NULL);
+	xTaskCreate(vsTask, "t4", 370, NULL,4, NULL); //task fixed +22
 }
 

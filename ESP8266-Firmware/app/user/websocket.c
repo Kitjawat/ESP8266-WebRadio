@@ -379,6 +379,7 @@ ICACHE_FLASH_ATTR void websocketTask(void* pvParams) {
 			buf[recbytes] = 0;
 //			printf("ws write accept request: \"%s\" len:%d\n",buf,recbytes);
 			write(conn, buf, recbytes);  // reply to accept
+			free (bufin);
 			while (iswebsocket(conn )) { // For now we assume max. MAXDATA bytes for request
 				recbytes = read(conn , buf, MAXDATA);
 				if (recbytes < 0) {
@@ -386,6 +387,7 @@ ICACHE_FLASH_ATTR void websocketTask(void* pvParams) {
 					{
 						printf ("ws Socket %d read fails %d\n",conn, errno);
 						wsclientDisconnect(conn, 500,NULL,0);
+						
 						break;
 					} //else printf("ws try again\n");
 				}	
