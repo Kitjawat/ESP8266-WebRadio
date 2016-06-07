@@ -222,9 +222,9 @@ void user_init(void)
 	TCP_WND = 2 * TCP_MSS;
 
 	xTaskCreate(testtask, "t0", 175, NULL, 1, NULL); // DEBUG/TEST
-	xTaskCreate(uartInterfaceTask, "t1", 270, NULL, 2, NULL);
-	xTaskCreate(clientTask, "t3", 850, NULL, 5, NULL);
-	xTaskCreate(serverTask, "t2", 220, NULL, 4, NULL);
+	xTaskCreate(uartInterfaceTask, "t1", 240, NULL, 2, NULL);
+	xTaskCreate(clientTask, "t3", 1024, NULL, 5, NULL);
+	xTaskCreate(serverTask, "t2", 200, NULL, 4, NULL);
 	xTaskCreate(vsTask, "t4", 370, NULL,4, NULL); //task fixed +22
 }
 

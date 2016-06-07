@@ -16,6 +16,21 @@
  * @param output char*
  */
  
+void *inwmalloc(size_t n)
+{
+	void* ret;
+//printf ("ws Malloc of %d,  Heap size: %d\n",n,xPortGetFreeHeapSize( ));
+	ret = malloc(n);
+		if (ret == NULL) printf("Server: Malloc fails for %d\n",n);
+//	printf ("ws Malloc after of %d bytes ret:%x  Heap size: %d\n",n,ret,xPortGetFreeHeapSize( ));
+	return ret;
+}	
+void inwfree(void *p,char* from)
+{
+	free(p);
+//	printf ("ws free of %x,  from %s             Heap size: %d\n",p,from,xPortGetFreeHeapSize( ));
+} 
+ 
 void base64_encode(uint8_t * data, size_t length, char* output) {
     size_t size = ((length * 1.6f) + 1);
 
@@ -116,7 +131,6 @@ uint32_t decodeHttpMessage (char * inputMessage, char * outputMessage)
 	strcat(outputMessage,str2);
 	//Add extra /n/r at the end
 //	printf("ws decode HTTP: %x \"%s\"\n",outputMessage,outputMessage);
-	free(inputMessage);
 	return outputLength;
 }
 /////////////////////////////////////////////////////////////////////
@@ -290,10 +304,10 @@ void websocketparsedata(int socket, char* buf, int len)
     }
 	payload[header.payloadLen] = 0x00;	   
 	
-	
-//	if (header.opCode == WSop_text)
-//		printf("ws parsedata data  socket:%d, opcode: %d,  payload:%s   len:%d\n",socket,header.opCode,payload,header.payloadLen);
-
+/*	
+	if (header.opCode == WSop_text)
+		printf("ws parsedata data  socket:%d, opcode: %d,  payload:%s   len:%d\n",socket,header.opCode,payload,header.payloadLen);
+*/
 // ok payload is unmasked now.	
         switch(header.opCode) {
             case WSop_text:
@@ -308,7 +322,7 @@ void websocketparsedata(int socket, char* buf, int len)
             case WSop_pong:
                 break;
             case WSop_close: 
-                wsclientDisconnect(socket, 1000,NULL,0);
+				websocketremoveclient(socket);
                 break;
             case WSop_continuation:
                 wsclientDisconnect(socket, 1003,NULL,0);
@@ -322,11 +336,7 @@ void websocketparsedata(int socket, char* buf, int len)
 //write a txt data
 void websocketwrite(int socket, char* buf, int len)
 {
-//	portBASE_TYPE uxHighWaterMark;	
 	sendFrame(socket, WSop_text, buf , len );
-/*	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-	printf("watermark wsTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
-*/	
 }	
 //broadcast a txt data to all clients
 void websocketbroadcast(char* buf, int len)
@@ -353,58 +363,66 @@ void websocketlimitedbroadcast(int socket,char* buf, int len)
 
 ICACHE_FLASH_ATTR void websocketTask(void* pvParams) {
 	// retrieve parameters
+	struct timeval timeout;      
+    timeout.tv_sec = 10000; // bug *1000 for seconds
+    timeout.tv_usec = 0;	
 	struct websocketparam* param = (struct websocketparam*) pvParams;
 //	portBASE_TYPE uxHighWaterMark;
 	int conn  = param->socket;
 //	printf("ws task entry socket:%d\n",conn);
 	char* bufin = param->buf;
 	int buflen = param->len;
-	free (pvParams);
-	struct timeval timeout;      
-    timeout.tv_sec = 1000; // bug *1000 for seconds
-    timeout.tv_usec = 0;	
-	char *buf = (char *)malloc(MAXDATA);
-//	char buf[MAXDATA+1];
 	int32_t recbytes = 0;
+	inwfree (param,"pvParam");
+/*	
+	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+	printf("watermark wsTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
+*/	
+	char *buf = NULL;
+	buf = (char *)inwmalloc(MAXDATA);
+//	char buf[MAXDATA] = {0};
 	bufin[buflen] = 0;
 //	printf("wstask param: bufin:\"%s\", buflen: %d, buf:%x buf:\"%s\"\n",bufin,buflen,buf,buf); 
 	// answer to the request and wait a message
 	if (buf != NULL)
 	{
-		if (setsockopt (conn, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
-				printf("setsockopt failed\n");
+//		if (setsockopt (conn, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
+//				printf("setsockopt failed\n");
 		if ((!iswebsocket(conn ))&&(websocketnewclient(conn))) 
 		{
 			recbytes = decodeHttpMessage (bufin, buf);
 			buf[recbytes] = 0;
 //			printf("ws write accept request: \"%s\" len:%d\n",buf,recbytes);
 			write(conn, buf, recbytes);  // reply to accept
-			free (bufin);
+			inwfree (bufin,"bufin");
 			while (iswebsocket(conn )) { // For now we assume max. MAXDATA bytes for request
 				recbytes = read(conn , buf, MAXDATA);
 				if (recbytes < 0) {
 					if ((errno != EAGAIN )&&(errno != 0 ))
 					{
-						printf ("ws Socket %d read fails %d\n",conn, errno);
-						wsclientDisconnect(conn, 500,NULL,0);
-						
+						if (errno != ECONNRESET )
+						{
+							printf ("ws Socket %d read fails %d\n",conn, errno);
+							wsclientDisconnect(conn, 500,NULL,0);		
+						} else websocketremoveclient(conn);
 						break;
 					} //else printf("ws try again\n");
 				}	
 				if (recbytes > 0) websocketparsedata(conn, buf, recbytes);	
 				else vTaskDelay(100);
 			}			
-		} else free (bufin);
-		free (buf);
-	}
-	wsclientDisconnect(conn, 500,NULL,0);
+		} else inwfree (bufin,"bufin1");
+	} else printf("ws  malloc buf fails\n");
+	websocketremoveclient(conn);
 	strcpy(buf, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n");
 	write(conn, buf, strlen(buf));
+	inwfree (buf,"buf");
 	shutdown(conn,SHUT_RDWR);
 	vTaskDelay(20);	
 	close(conn);
 //	printf("ws task exit socket:%d\n",conn);
-/*	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+/*
+	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
 	printf("watermark wsTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
 */	
 	vTaskDelete( NULL );	

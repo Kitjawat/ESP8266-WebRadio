@@ -33,12 +33,12 @@ static uint8_t connect = 0, playing = 0;
 */
 struct icyHeader header = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL};
 
-char *metaint = NULL;
-char *clientURL = NULL;
-char *clientPath = NULL;
+char metaint[10];
+char clientURL[256]= {0,0};
+char clientPath[256] = {0,0};
 uint16_t clientPort = 80;
 
-struct hostent *server;
+struct hostent *server = NULL;
 
 ///////////////
 #define BUFFER_SIZE 12960
@@ -58,10 +58,10 @@ void *incmalloc(size_t n)
 //	printf ("Client malloc after of %d bytes ret:%x  Heap size: %d\n",n,ret,xPortGetFreeHeapSize( ));
 	return ret;
 }	
-void incfree(void *p)
+void incfree(void *p,char* from)
 {
 	free(p);
-//	printf ("Client incfree of %x,  Heap size: %d\n",p,xPortGetFreeHeapSize( ));
+//	printf ("Client incfree of %x, from %s           Heap size: %d\n",p,from,xPortGetFreeHeapSize( ));
 }	
 
 ICACHE_FLASH_ATTR uint16_t getBufferFree() {
@@ -200,7 +200,7 @@ ICACHE_FLASH_ATTR char* stringify(char* str,int len)
 				}
 				new[j++] =(str)[i] ;
 			}
-			incfree(str);
+			incfree(str,"str");
 			new = realloc(new,j+1);
 //			printf("stringify: exit: len:%d  \"%s\"\n",j,new);
 			return new;		
@@ -244,7 +244,7 @@ ICACHE_FLASH_ATTR void clientSaveMetadata(char* s,int len,bool catenate)
 		} else
 		{
 			if (header.members.mArr[METADATA] != NULL)
-				incfree(header.members.mArr[METADATA]);
+				incfree(header.members.mArr[METADATA],"metad");
 			header.members.mArr[METADATA] = (char*)incmalloc((len+3)*sizeof(char));
 		}
 		if(header.members.mArr[METADATA] == NULL) 
@@ -260,7 +260,7 @@ ICACHE_FLASH_ATTR void clientSaveMetadata(char* s,int len,bool catenate)
 		{
 			sprintf(title,"{\"meta\":\"%s\"}",header.members.mArr[METADATA]); 
 			websocketbroadcast(title, strlen(title));
-			incfree(title);
+			incfree(title,"title");
 		} else printf("clientsaveMeta malloc title fails\n"); 
 }	
 
@@ -278,7 +278,7 @@ ICACHE_FLASH_ATTR void wsMonitor()
 {
 		char answer[300];
 		memset(&answer,0,300);
-		if ((clientURL != NULL) && (clientPath!= NULL))
+		if ((clientPath[0]!= 0))
 		{
 			sprintf(answer,"{\"monitor\":\"http://%s:%d%s\"}",clientURL,clientPort,clientPath);
 			websocketbroadcast(answer, strlen(answer));
@@ -318,7 +318,7 @@ ICACHE_FLASH_ATTR void wsHeaders()
 			(header.members.single.genre ==NULL)?"":header.members.single.genre); 
 //	printf("WSH:\"%s\"\n",wsh);
 	websocketbroadcast(wsh, strlen(wsh));	
-	incfree (wsh);
+	incfree (wsh,"wsh");
 }	
 
 ICACHE_FLASH_ATTR void clearHeaders()
@@ -336,7 +336,7 @@ ICACHE_FLASH_ATTR void clearHeaders()
 ICACHE_FLASH_ATTR bool clientSaveOneHeader(char* t, uint16_t len, uint8_t header_num)
 {
 	if(header.members.mArr[header_num] != NULL) 
-		incfree(header.members.mArr[header_num]);
+		incfree(header.members.mArr[header_num],"headernum");
 	header.members.mArr[header_num] = incmalloc((len+1)*sizeof(char));
 	if(header.members.mArr[header_num] == NULL)
 	{
@@ -382,18 +382,13 @@ ICACHE_FLASH_ATTR bool clientParseHeader(char* s)
 					ret = clientSaveOneHeader(t, len, header_num);
 				}
 				else // Numerical header field
-				{
-					if (metaint == NULL)
-						metaint = (char*) incmalloc(10); // one for life
-					if (metaint != NULL)
-					{					
+				{					
 						int i;
 						for(i = 0; i<len+1; i++) metaint[i] = 0;
 						strncpy(metaint, t, len);
 						header.members.single.metaint = atoi(metaint);
 //						printf("MetaInt= %s, Metaint= %d\n",metaint,header.members.single.metaint);
 						ret = true;
-					} else printf("clientParseHeader malloc fails\n");
 //			printf("icy: %s: %d\n",icyHeaders[header_num],header.members.single.metaint);					
 				}
 			}
@@ -409,28 +404,17 @@ ICACHE_FLASH_ATTR void clientSetURL(char* url)
 {
 	int l = strlen(url)+1;
 	if (url[0] == 0xff) return; // wrong url
-	if (clientURL == NULL)
-		clientURL = (char*) incmalloc(256); // only one malloc for the life
-	if(clientURL != NULL) 
-	{
-		strcpy(clientURL, url);
-		printf("##CLI.URLSET#: %s\n",clientURL);
-	}	
-	else printf("clientSetURL malloc fails\n");
+
+	strcpy(clientURL, url);
+	printf("##CLI.URLSET#: %s\n",clientURL);
 }
 
 ICACHE_FLASH_ATTR void clientSetPath(char* path)
 {
 	int l = strlen(path)+1;
 	if (path[0] == 0xff) return; // wrong path
-	if (clientPath == NULL)
-		clientPath = (char*) incmalloc(256); // only one malloc for the life
-	if(clientPath != NULL)
-	{
-		strcpy(clientPath, path);
-		printf("##CLI.PATHSET#: %s\n",clientPath);
-	}
-	else printf("clientSetPath malloc fails\n");	
+	strcpy(clientPath, path);
+	printf("##CLI.PATHSET#: %s\n",clientPath);
 }
 
 ICACHE_FLASH_ATTR void clientSetPort(uint16_t port)
@@ -445,7 +429,7 @@ ICACHE_FLASH_ATTR void clientConnect()
 //	metacount = 0;
 //	metasize = 0;
 	//if(netconn_gethostbyname(clientURL, &ipAddress) == ERR_OK) {
-	if(server) incfree(server);
+	if(server) incfree(server,"server");
 	if((server = (struct hostent*)gethostbyname(clientURL))) {
 		xSemaphoreGive(sConnect);
 	} else {
@@ -646,7 +630,7 @@ IRAM_ATTR void vsTask(void *pvParams) {
 	VS1053_SetTrebleFreq(device->freqtreble);
 	VS1053_SetBassFreq(device->freqbass);
 	VS1053_SetSpatial(device->spacial);
-	incfree(device);	
+	incfree(device,"device");	
 	VS1053_SPI_SpeedUp();
 	while(1) {
 		if(playing) {
@@ -682,9 +666,7 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 	struct sockaddr_in dest;
 	uint8_t bufrec[RECEIVE+10];
 //	portBASE_TYPE uxHighWaterMark;
-//	uint8_t* bufrec= incmalloc(RECEIVE+1);
-//	printf("WebClient bufrec malloc done\n");
-	clearHeaders();
+//	clearHeaders();
 /*	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
 	printf("watermark: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
 */	
@@ -744,13 +726,16 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 					clientSaveOneHeader("Not Found", 9,METANAME);
 			}//jpc
 			bufferReset();
-
-/*			uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+/*
+			uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
 			printf("watermark: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
 */
-					if (playing) VS1053_flush_cancel(2);
-			playing = 0;
-			VS1053_flush_cancel(0);
+			if (playing)
+			{
+				VS1053_flush_cancel(2);
+				playing = 0;
+				VS1053_flush_cancel(0);
+			}	
 			shutdown(sockfd,SHUT_RDWR);
 			vTaskDelay(10);	
 			close(sockfd);

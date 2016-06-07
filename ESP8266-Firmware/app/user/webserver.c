@@ -10,16 +10,16 @@ xSemaphoreHandle semclient = NULL ;
 void *inmalloc(size_t n)
 {
 	void* ret;
-//printf ("Malloc of %d,  Heap size: %d\n",n,xPortGetFreeHeapSize( ));
+//printf ("server Malloc of %d,  Heap size: %d\n",n,xPortGetFreeHeapSize( ));
 	ret = malloc(n);
 		if (ret == NULL) printf("Server: Malloc fails for %d\n",n);
-//	printf ("Malloc after of %d bytes ret:%x  Heap size: %d\n",n,ret,xPortGetFreeHeapSize( ));
+//	printf ("server Malloc after of %d bytes ret:%x  Heap size: %d\n",n,ret,xPortGetFreeHeapSize( ));
 	return ret;
 }	
 void infree(void *p)
 {
 	free(p);
-//	printf ("free of %x,  Heap size: %d\n",p,xPortGetFreeHeapSize( ));
+//	printf ("server free of %x,                      Heap size: %d\n",p,xPortGetFreeHeapSize( ));
 }	
 
 
@@ -83,6 +83,7 @@ ICACHE_FLASH_ATTR void serveFile(char* name, int conn)
 			content += part;
 			progress -= part;
 			if (progress <= part) part = progress;
+			vTaskDelay(1);
 		} 
 
 		infree(con);
@@ -501,7 +502,7 @@ ICACHE_FLASH_ATTR bool httpServerHandleConnection(int conn, char* buf, uint16_t 
 			pvParams->buf = pbuf;
 			pvParams->len = buflen;
 //			printf("GET websocket\n");
-			while (xTaskCreate( websocketTask,"t11",512,(void *) pvParams,2, NULL )!= pdPASS) 
+			while (xTaskCreate( websocketTask,"t11",410,(void *) pvParams,4, NULL )!= pdPASS) 
 			{
 				printf("ws xTaskCreate  failed. Retry\n");
 				vTaskDelay(100);
@@ -655,9 +656,10 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 		}
 	}
 	xSemaphoreGive(semclient);	
-//	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-//	printf("watermark serverClientTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);	
-
+/*	
+	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+	printf("watermark serverClientTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);	
+*/
 
 //	printf("Client exit socket:%d result %d \n",client_sock,result);
 	vTaskDelete( NULL );	
@@ -669,7 +671,7 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 //	portBASE_TYPE uxHighWaterMark;
     semclient = xSemaphoreCreateCounting(2,2); 
 	websocketinit();
-	int stack = 360;
+	int stack = 340;
 	
 	while (1) {
         bzero(&server_addr, sizeof(struct sockaddr_in));
@@ -738,9 +740,10 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 						} else {vTaskDelay(20);printf("server busy. Retrying...\n");}
 					}
 				}	
-//				uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-//				printf("watermark serverTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
-				
+/*				
+				uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+				printf("watermark serverTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
+*/				
 			}
         } while (0);
     }
