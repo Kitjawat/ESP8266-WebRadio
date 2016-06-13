@@ -225,6 +225,8 @@ function icyResp(arr) {
 			$url = arr["url1"].replace(/\\/g,"");
 			document.getElementById('url1').innerHTML = $url;
 			document.getElementById('url2').href = $url;
+			if (arr["meta"] == "") 
+				{ document.getElementById('meta').innerHTML = "Ka-Radio";setMainHeight("tab-content1");}			
 			if (arr["meta"]) document.getElementById('meta').innerHTML = arr["meta"].replace(/\\/g,"");
 //					else document.getElementById('meta').innerHTML = "Ka-Radio";
 
