@@ -1,6 +1,16 @@
 # ** ESP8266 & VS1053 Wifi WebRadio** #
 ###Ka-Radio, a WiFi shoutcast player based on ESP8266 and VS1053b chips
 ##Basic informations
+####Version: 1.0.4<br/>
+Added:<br/>
+Next and previous buttons,<br/>
+Autoplay check box<br/>
+"Now playing" removed, the title is now on the top of the page,<br/>
+A hardware panel can be built. See  ESP8266-WebRadio/Hardware/KiCAD/controles/controles.pdf ,<br/>
+Optimized software.<br/>
+<br/>
+This release is the end of the project.<br/>
+In the future, a remote control will be added (433Mhz RF) based on arduino pro mini.<br/>
 ####Version: 1.0.3<br />
 Added:<br/>
 New html look,<br/>
