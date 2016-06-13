@@ -79,6 +79,7 @@ void	VS1053_flush_cancel(uint8_t mode);// 0 only fillbyte  1 before play    2 cl
 
 //Volume control
 uint8_t 	VS1053_GetVolume();
+uint8_t 	VS1053_GetVolumeLinear();
 void	VS1053_SetVolume(uint8_t xMinusHalfdB);
 void 	VS1053_VolumeUp(uint8_t xHalfdB);
 void	VS1053_VolumeDown(uint8_t xHalfdB);

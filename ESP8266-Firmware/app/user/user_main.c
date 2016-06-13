@@ -42,8 +42,8 @@ void cb(sc_status stat, void *pdata)
 void uartInterfaceTask(void *pvParameters) {
 	char tmp[64];
 	bool conn = false;
-/*	int uxHighWaterMark;
-	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+	int uxHighWaterMark;
+/*	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
 	printf("watermark wsTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
 */
 	int t = 0;
@@ -168,12 +168,16 @@ void uartInterfaceTask(void *pvParameters) {
 	FlashOn = 100;FlashOff = 10;	
 	while(1) {
 		while(1) {
-			char c = uart_getchar();
-			if(c == '\r') break;
-			if(c == '\n') break;
-			tmp[t] = c;
-			t++;
-			if(t == 64) t = 0;
+			int c = uart_getchar_ms(100);
+			if (c!= -1)
+			{
+				if((char)c == '\r') break;
+				if((char)c == '\n') break;
+				tmp[t] = (char)c;
+				t++;
+				if(t == 64) t = 0;
+			}
+			switchCommand() ;  // hardware panel of command
 		}
 		checkCommand(t, tmp);
 /*	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
@@ -181,7 +185,7 @@ void uartInterfaceTask(void *pvParameters) {
 */		
 		for(t = 0; t<64; t++) tmp[t] = 0;
 		t = 0;
-		vTaskDelay(20); // 250ms
+//		vTaskDelay(20); // 250ms
 	}
 }
 
@@ -221,10 +225,10 @@ void user_init(void)
 	Delay(100);	
 	TCP_WND = 2 * TCP_MSS;
 
-	xTaskCreate(testtask, "t0", 175, NULL, 1, NULL); // DEBUG/TEST
-	xTaskCreate(uartInterfaceTask, "t1", 240, NULL, 2, NULL);
-	xTaskCreate(clientTask, "t3", 1024, NULL, 5, NULL);
-	xTaskCreate(serverTask, "t2", 200, NULL, 4, NULL);
-	xTaskCreate(vsTask, "t4", 370, NULL,4, NULL); //task fixed +22
+	xTaskCreate(testtask, "t0", 80, NULL, 1, NULL); // DEBUG/TEST 80
+	xTaskCreate(uartInterfaceTask, "t1", 265, NULL, 2, NULL); //240
+	xTaskCreate(clientTask, "t3", 1024, NULL, 5, NULL); //1024
+	xTaskCreate(serverTask, "t2", 180, NULL, 4, NULL); //200
+	xTaskCreate(vsTask, "t4", 370, NULL,4, NULL); //370
 }
 

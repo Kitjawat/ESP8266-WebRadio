@@ -35,7 +35,7 @@ Example of indications received:
 ##CLI.META#: KAOLIN - Partons vite
 
 with ICYx: 0:"icy-name:", 1:"icy-notice1:", 2:"icy-notice2:",  3:"icy-url:", 4:"icy-genre:", 5:"icy-br:", 6:"icy-description:", 7:"ice-audio-info:"
-Some other informations may be printed for debug purpose, but usefull events always start with #
+Some other informations may be printed for debug purpose, but usefull events always start with ##
 
 
 Commands:
@@ -58,8 +58,10 @@ cli.port("xxxx")		: the port number of the station to play
 cli.start				: start to play the given station
 cli.stop				: stop the playing station
 cli.list				: list of the recorded stations
-cli.play("xxx")			: play the xxx recorded station
+cli.play("xxx")			: play the xxx recorded station in the list
 cli.vol("xxx")			: set the volume to xxx with xxx from 0 to 254 (max volume)
+cli.prev (or cli.previous): select the previous station in the list and play it
+cli.next				: select the next station in the list and play it
 
 sys.erase				: erase all recorded configuration and stations.
 

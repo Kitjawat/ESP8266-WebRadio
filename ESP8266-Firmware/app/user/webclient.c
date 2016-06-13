@@ -55,6 +55,7 @@ void *incmalloc(size_t n)
 //printf ("Client malloc of %d,  Heap size: %d\n",n,xPortGetFreeHeapSize( ));
 	ret = malloc(n);
 		if (ret == NULL) printf("Client: incmalloc fails for %d\n",n);
+//	if (n <4) printf("Client: incmalloc size:%d\n",n);	
 //	printf ("Client malloc after of %d bytes ret:%x  Heap size: %d\n",n,ret,xPortGetFreeHeapSize( ));
 	return ret;
 }	
@@ -172,7 +173,7 @@ ICACHE_FLASH_ATTR bool clientParsePlaylist(char* s)
 	if (strncmp(url,"localhost",9)!=0) clientSetURL(url);
 	clientSetPath(path);
 	clientSetPort(atoi(port));
-	printf("##CLI.URL#: %s, path: %s, port: %s\n",url,path,port);
+//	printf("##CLI.URL#: %s, path: %s, port: %s\n",url,path,port);
 	return true;
   }
   else 
@@ -194,11 +195,16 @@ ICACHE_FLASH_ATTR char* stringify(char* str,int len)
 			{
 				if (str[i] == '"') {
 					new[j++] = '\\';
-				}
+					new[j++] =(str)[i] ;
+				} else
 				if (str[i] == '/') {
 					new[j++] = '\\';
-				}
-				new[j++] =(str)[i] ;
+					new[j++] =(str)[i] ;
+				}else	// pseudo ansi utf8 convertion
+					if ((str[i] > 192) && (str[i+1] < 128)){
+					new[j++] = 195;
+					new[j++] =(str)[i]-64 ;
+				} else new[j++] =(str)[i] ;
 			}
 			incfree(str,"str");
 			new = realloc(new,j+1);
@@ -218,7 +224,7 @@ ICACHE_FLASH_ATTR void clientSaveMetadata(char* s,int len,bool catenate)
 		char* t_quote;
 		char* t ;
 		bool found = false;
-//		printf("Entry meta s= %s\n",s);
+		if (catenate) printf("Entry meta len=%d catenate=%d  s= %s\n",len,catenate,s);
 		if (catenate) oldlen = strlen(header.members.mArr[METADATA]);
 		t = s;
 		t_end = strstr(t,";StreamUrl='");
@@ -264,16 +270,56 @@ ICACHE_FLASH_ATTR void clientSaveMetadata(char* s,int len,bool catenate)
 		} else printf("clientsaveMeta malloc title fails\n"); 
 }	
 
+// websocket: next station
+ICACHE_FLASH_ATTR void wsStationNext()
+{
+	char answer[22];
+	struct shoutcast_info* si =NULL;
+	if (currentStation <191)
+		si = getStation(++currentStation);
+	else 
+	{
+		currentStation = 0;
+		si = getStation(currentStation);
+	}		
+	if(si != NULL && (strcmp(si->domain,"")!=0) && (strcmp( si->file,"")!= 0))
+	{
+		sprintf(answer,"%d",currentStation);
+		playStation	(answer);
+	} else currentStation--;
+	incfree(si,"wsstation");
+	sprintf(answer,"{\"wsstation\":\"%d\"}",currentStation);
+	websocketbroadcast(answer, strlen(answer));
+}
+// websocket: previous station
+ICACHE_FLASH_ATTR void wsStationPrev()
+{
+	char answer[22];
+	struct shoutcast_info* si = NULL;
+	if (currentStation >0)
+		si = getStation(--currentStation);
+	else return;
+	if(si != NULL && (strcmp(si->domain,"")!=0) && (strcmp( si->file,"")!= 0))
+	{
+		sprintf(answer,"%d",currentStation);
+		playStation	(answer);
+	} else currentStation++;
+	incfree(si,"wsstation");
+	sprintf(answer,"{\"wsstation\":\"%d\"}",currentStation);
+	websocketbroadcast(answer, strlen(answer));
+}
+
 // websocket: broadcast volume to all client
 ICACHE_FLASH_ATTR void wsVol(char* vol)
 {
-	char answer[16];
+	char answer[21];
 	if (vol != NULL)
 	{	
 		sprintf(answer,"{\"wsvol\":\"%s\"}",vol);
 		websocketbroadcast(answer, strlen(answer));
 	} 
 }	
+// websocket: broadcast monitor url
 ICACHE_FLASH_ATTR void wsMonitor()
 {
 		char answer[300];
@@ -294,7 +340,7 @@ ICACHE_FLASH_ATTR void wsHeaders()
 	if ((header.members.single.notice2 != NULL)&(strlen(header.members.single.notice2)==0)) not2=header.members.single.audioinfo;
 
 	int json_length ;
-	json_length =109+
+	json_length =93+
 		((header.members.single.description ==NULL)?0:strlen(header.members.single.description)) +
 		((header.members.single.name ==NULL)?0:strlen(header.members.single.name)) +
 		((header.members.single.bitrate ==NULL)?0:strlen(header.members.single.bitrate)) +
@@ -304,7 +350,7 @@ ICACHE_FLASH_ATTR void wsHeaders()
 		((header.members.single.genre ==NULL)?0:strlen(header.members.single.genre))+
 		((header.members.single.metadata ==NULL)?0:strlen(header.members.single.metadata))
 		;
-	char* wsh = incmalloc(json_length);
+	char* wsh = incmalloc(json_length+1);
 	if (wsh == NULL) {printf("wsHeader malloc fails\n");return;}
 
 	sprintf(wsh,"{\"wsicy\":{\"descr\":\"%s\",\"meta\":\"%s\",\"name\":\"%s\",\"bitr\":\"%s\",\"url1\":\"%s\",\"not1\":\"%s\",\"not2\":\"%s\",\"genre\":\"%s\"}}",
@@ -316,7 +362,7 @@ ICACHE_FLASH_ATTR void wsHeaders()
 			(header.members.single.notice1 ==NULL)?"":header.members.single.notice1,
 			(not2 ==NULL)?"":not2 ,
 			(header.members.single.genre ==NULL)?"":header.members.single.genre); 
-//	printf("WSH:\"%s\"\n",wsh);
+//	printf("WSH: len:%d  \"%s\"\n",strlen(wsh),wsh);
 	websocketbroadcast(wsh, strlen(wsh));	
 	incfree (wsh,"wsh");
 }	
@@ -389,15 +435,14 @@ ICACHE_FLASH_ATTR bool clientParseHeader(char* s)
 						header.members.single.metaint = atoi(metaint);
 //						printf("MetaInt= %s, Metaint= %d\n",metaint,header.members.single.metaint);
 						ret = true;
-//			printf("icy: %s: %d\n",icyHeaders[header_num],header.members.single.metaint);					
+//						printf("icy: %s: %d\n",icyHeaders[header_num],header.members.single.metaint);					
 				}
 			}
 		}
 	}
 	if (ret == true) {wsHeaders();wsMonitor();}
 	xSemaphoreGive(sHeader);
-	
-	return ret;
+		return ret;
 }
 
 ICACHE_FLASH_ATTR void clientSetURL(char* url)
@@ -426,9 +471,6 @@ ICACHE_FLASH_ATTR void clientSetPort(uint16_t port)
 ICACHE_FLASH_ATTR void clientConnect()
 {
 	cstatus = C_HEADER;
-//	metacount = 0;
-//	metasize = 0;
-	//if(netconn_gethostbyname(clientURL, &ipAddress) == ERR_OK) {
 	if(server) incfree(server,"server");
 	if((server = (struct hostent*)gethostbyname(clientURL))) {
 		xSemaphoreGive(sConnect);
@@ -537,7 +579,7 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
 	break;
 	default:		
 // -----------	
-		rest = 0;
+//		rest = 0;
 		lc = 0;
 		if((chunked != 0)&&((cchunk ==0)||(len >= cchunk-1))) {
 			if (len == cchunk)
@@ -596,7 +638,7 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
 		{	
 	        if (rest <0) 
 			{
-//				printf("Negative len = %d, metad = %d  rest = %d\n",len,metad,rest);
+//				printf("Negative len= %d, metad= %d  rest= %d   pdata= \"%s\"\n",len,metad,rest,pdata);
 				clientSaveMetadata(pdata,0-rest,true);
 				/*buf =pdata+rest;*/ len +=rest;metad += rest; rest = 0;
 			}	
@@ -646,14 +688,7 @@ IRAM_ATTR void vsTask(void *pvParams) {
 		{
 //			VS1053_SPI_SpeedDown();
 			vTaskDelay(20);
-/*			s = VS1053_GetVolume( );	
-			if(playing)
-			{
-				VS1053_SetVolume( 254);	
-				vTaskDelay(100);
-				VS1053_SetVolume( s);	
-			}
-*/			
+		
 //	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
 //	printf("watermark vstask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);			
 		}	
@@ -722,8 +757,17 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams) {
 			/*---Clean up---*/
 			if (bytes_read == 0 ) 
 			{
-					clientDisconnect(); 
-					clientSaveOneHeader("Not Found", 9,METANAME);
+					
+					if (playing) 
+					{
+						clientDisconnect(); 
+						clientConnect();
+					}	
+					else{
+						clientDisconnect(); 
+						clientSaveOneHeader("Not Found", 9,METANAME);
+					}	
+					
 			}//jpc
 			bufferReset();
 /*

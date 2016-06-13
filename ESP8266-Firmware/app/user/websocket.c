@@ -364,7 +364,7 @@ void websocketlimitedbroadcast(int socket,char* buf, int len)
 ICACHE_FLASH_ATTR void websocketTask(void* pvParams) {
 	// retrieve parameters
 	struct timeval timeout;      
-    timeout.tv_sec = 10000; // bug *1000 for seconds
+    timeout.tv_sec = 100000; // bug *1000 for seconds
     timeout.tv_usec = 0;	
 	struct websocketparam* param = (struct websocketparam*) pvParams;
 //	portBASE_TYPE uxHighWaterMark;
@@ -376,7 +376,7 @@ ICACHE_FLASH_ATTR void websocketTask(void* pvParams) {
 	inwfree (param,"pvParam");
 /*	
 	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-	printf("watermark wsTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
+	printf("watermark wsTask: %d  %d\n",conn,uxHighWaterMark);
 */	
 	char *buf = NULL;
 	buf = (char *)inwmalloc(MAXDATA);
@@ -386,8 +386,8 @@ ICACHE_FLASH_ATTR void websocketTask(void* pvParams) {
 	// answer to the request and wait a message
 	if (buf != NULL)
 	{
-//		if (setsockopt (conn, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
-//				printf("setsockopt failed\n");
+		if (setsockopt (conn, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
+				printf("setsockopt failed\n");
 		if ((!iswebsocket(conn ))&&(websocketnewclient(conn))) 
 		{
 			recbytes = decodeHttpMessage (bufin, buf);
@@ -409,21 +409,28 @@ ICACHE_FLASH_ATTR void websocketTask(void* pvParams) {
 					} //else printf("ws try again\n");
 				}	
 				if (recbytes > 0) websocketparsedata(conn, buf, recbytes);	
-				else vTaskDelay(100);
+				else vTaskDelay(50);
+/*				
+			uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+			printf("watermark middle wsTask: %d    %d\n",conn,uxHighWaterMark);
+*/				
 			}			
 		} else inwfree (bufin,"bufin1");
 	} else printf("ws  malloc buf fails\n");
 	websocketremoveclient(conn);
-	strcpy(buf, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n");
-	write(conn, buf, strlen(buf));
-	inwfree (buf,"buf");
+	if (buf != NULL)
+	{
+		strcpy(buf, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n");
+		write(conn, buf, strlen(buf));
+		inwfree (buf,"buf");
+	}
 	shutdown(conn,SHUT_RDWR);
 	vTaskDelay(20);	
 	close(conn);
 //	printf("ws task exit socket:%d\n",conn);
 /*
 	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-	printf("watermark wsTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
+	printf("watermark end wsTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
 */	
 	vTaskDelete( NULL );	
 }

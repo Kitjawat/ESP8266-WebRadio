@@ -258,9 +258,12 @@ uint8_t value =  VS1053_ReadRegister(SPI_VOL) & 0x00FF;
 	{
 		j = (log10(255/((float)i+1)) * 105.54571334);
 //		printf("i=%d  j=%d value=%d\n",i,j,value);
-		if (value == j ){ return i;}
+		if (value == j ){  return i;}
 	}	
 	return 127;
+}
+ICACHE_FLASH_ATTR uint8_t VS1053_GetVolumeLinear(){
+	return VS1053_ReadRegister(SPI_VOL) & 0x00FF;
 }
 /**
  * Function sets the same volume level to both channels.
@@ -270,6 +273,8 @@ uint8_t value =  VS1053_ReadRegister(SPI_VOL) & 0x00FF;
 ICACHE_FLASH_ATTR void VS1053_SetVolume(uint8_t xMinusHalfdB){
 uint8_t value = (log10(255/((float)xMinusHalfdB+1)) * 105.54571334);	
 //printf("setvol: %d\n",value);
+if (value == 255) value = 254;
+//printf("xMinusHalfdB=%d  value=%d\n",xMinusHalfdB,value);
 	VS1053_WriteRegister(SPI_VOL,value,value);
 }
 

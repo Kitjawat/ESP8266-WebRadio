@@ -11,11 +11,83 @@
 #include "eeprom.h"
 
 
-extern void wsVol(char* vol);
+uint16_t currentStation = 0;
 
+//extern uint16_t currentStation;
+extern void wsVol(char* vol);
 extern void playStation(char* id);
 extern void setVolume(char* vol);
 #define MAX_WIFI_STATIONS 50
+	bool inside = false;
+
+void switchCommand() {
+	int adc;
+	uint8_t vol;
+	char Vol[22];
+//	vTaskDelay(100);
+//	while (true)
+	{	
+		adc = system_adc_read(); 
+//		if (adc < 940) printf("adc: %d\n",adc);
+//		if (adc >940) vTaskDelay(10);
+		if (inside&&(adc > 940)) inside = false;
+		
+		if ((adc >400) && (adc < 580)) // volume +
+		{
+			vol = VS1053_GetVolume();
+			if (vol <244) 
+			{	
+				vol+=10;	
+//				printf("vol %d   vol1 %d\n",vol,vol1);					
+				sprintf(Vol,"%d",vol);
+				setVolume(Vol);
+				wsVol(Vol);	
+			}
+		}
+		else if ((adc >730) && (adc < 830)) // volume -
+		{
+			vol = VS1053_GetVolume();
+			if (vol >10) 
+			{	
+				vol-=10;
+//				printf("vol %d   vol1 %d\n",vol,vol1);					
+				sprintf(Vol,"%d",vol);
+				setVolume(Vol);
+				wsVol(Vol);	
+			}
+		}		
+		if (!inside)
+		{	
+			if (adc < 200) // stop
+			{
+				inside = true;
+				clientDisconnect();
+			}
+			else if ((adc >278) && (adc < 380)) //start
+			{
+				inside = true;
+				sprintf(Vol,"%d",currentStation);
+				playStation	(Vol);
+				sprintf(Vol,"{\"wsstation\":\"%d\"}",currentStation);
+				websocketbroadcast(Vol, strlen(Vol));
+			}
+			else if ((adc >830) && (adc < 930)) // station+
+			{
+				inside = true;
+				wsStationNext();
+			}
+			else if ((adc >590) && (adc < 710)) // station-
+			{
+				inside = true;
+				wsStationPrev();
+			}
+//			vTaskDelay(5);	
+		}
+	};
+}
+
+
+
 
 uint8_t startsWith(const char *pre, const char *str)
 {
@@ -317,6 +389,8 @@ ICACHE_FLASH_ATTR void checkCommand(int size, char* s)
     else if(strcmp(tmp, "cli.start") == 0) clientConnect();
     else if(strcmp(tmp, "cli.stop") == 0) clientDisconnect();
     else if(strcmp(tmp, "cli.list") == 0) clientList();
+    else if(strcmp(tmp, "cli.next") == 0) wsStationNext();
+    else if(strncmp(tmp, "cli.previous",8) == 0) wsStationPrev();
     else if(startsWith("cli.play",tmp)) clientPlay(tmp);
 	else if(startsWith("cli.vol",tmp)) clientVol(tmp);
     else if(strcmp(tmp, "sys.erase") == 0) eeEraseAll();

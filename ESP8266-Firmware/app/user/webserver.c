@@ -10,10 +10,11 @@ xSemaphoreHandle semclient = NULL ;
 void *inmalloc(size_t n)
 {
 	void* ret;
-//printf ("server Malloc of %d,  Heap size: %d\n",n,xPortGetFreeHeapSize( ));
+//	printf ("server Malloc of %d,  Heap size: %d\n",n,xPortGetFreeHeapSize( ));
 	ret = malloc(n);
-		if (ret == NULL) printf("Server: Malloc fails for %d\n",n);
+	if (ret == NULL) printf("Server: Malloc fails for %d\n",n);
 //	printf ("server Malloc after of %d bytes ret:%x  Heap size: %d\n",n,ret,xPortGetFreeHeapSize( ));
+//	if (n <4) printf("Server: incmalloc size:%d\n",n);	
 	return ret;
 }	
 void infree(void *p)
@@ -56,8 +57,8 @@ ICACHE_FLASH_ATTR void serveFile(char* name, int conn)
 	{
 		char *con = NULL;
 		do {
-		con = (char*)inmalloc((gpart+1)*sizeof(char));
-		gpart /=2;
+			con = (char*)inmalloc((gpart)*sizeof(char));
+			gpart /=2;
 		} while ((con == NULL)&&(gpart >=32));
 		
 		if ((con == NULL)||(gpart <32))
@@ -100,19 +101,15 @@ ICACHE_FLASH_ATTR char* getParameterFromResponse(char* param, char* data, uint16
 	if(p != NULL) {
 		p += strlen(param);
 		char* p_end = strstr(p, "&");
-		if(p_end <= 0) p_end = data_length + data;
-		if(p_end > 0) {
+		if(p_end ==NULL) p_end = data_length + data;
+		if(p_end != NULL ) {
+			if (p_end==p) return NULL;
 			char* t = inmalloc(p_end-p + 1);
 			if (t == NULL) { printf("getParameterFromResponse inmalloc fails\n"); return NULL;}
 			int i;
 			for(i=0; i<(p_end-p + 1); i++) t[i] = 0;
 			strncpy(t, p, p_end-p);
 //			printf("getParam: in: \"%s\"   \"%s\"\n",data,t);
-/*			if (strstr(t, "%2F")!=NULL)
-			{
-				printf(" replace %s\n",t);
-				t = str_replace(t, "%2F", "/", strlen(t)); 
-			}*/	
 			return t;
 		}
 	} else return NULL;
@@ -139,26 +136,20 @@ ICACHE_FLASH_ATTR void setVolume(char* vol) {
 // treat the received message
 void websockethandle(int socket, wsopcode_t opcode, uint8_t * payload, size_t length)
 {
-	char answer[16];
+	char answer[17];
 	struct device_settings *device;
-	char* vol;
-	vol = getParameterFromResponse("wsvol=", payload, length);
-	if (vol)
-	{	
-		setVolume(vol);
-		
-//		answer = inmalloc(16);
-//		if (answer != NULL)
-//		{	
-			sprintf(answer,"{\"wsvol\":\"%s\"}",vol);
-			websocketlimitedbroadcast(socket,answer, strlen(answer));
-//			infree(answer);
-//		}	
-//		else printf("ws inmalloc fails\n");	
-		infree(vol);
+	//wsvol
+	if (strstr(payload,"wsvol=")!= NULL)
+	{
+		if (strstr(payload,"&") != NULL)
+			*strstr(payload,"&")=0;
+		else return;
+		setVolume(payload+6);
+		sprintf(answer,"{\"wsvol\":\"%s\"}",payload+6);
+		websocketlimitedbroadcast(socket,answer, strlen(answer));
 	}
-	vol = getParameterFromResponse("monitor", payload, length);
-	if (vol) {wsMonitor();infree(vol);}
+	//monitor
+	else if (strstr(payload,"monitor")!= NULL){wsMonitor();}
 }
 
 
@@ -166,16 +157,22 @@ void websockethandle(int socket, wsopcode_t opcode, uint8_t * payload, size_t le
 ICACHE_FLASH_ATTR void playStation(char* id) {
 	struct shoutcast_info* si;
 	si = getStation(atoi(id));
+	currentStation = atoi(id);
 	if(si != NULL &&si->domain && si->file) {
 		int i;
 		vTaskDelay(5);
 		clientDisconnect();
-		while(clientIsConnected()) {vTaskDelay(5);}
+		for (i = 0;i<100;i++)
+		{
+			if(!clientIsConnected())break;
+			vTaskDelay(4);
+		}
+	
 		clientSetURL(si->domain);
 		clientSetPath(si->file);
 		clientSetPort(si->port);
 		clientConnect();
-		for (i = 0;i<50;i++)
+		for (i = 0;i<100;i++)
 		{
 		  if (clientIsConnected()) break;
 		  vTaskDelay(4);
@@ -187,6 +184,7 @@ ICACHE_FLASH_ATTR void playStation(char* id) {
 ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int conn) {
 //	printf("HandlePost %s\n",name);
 	char* head = NULL;
+	int i;
 	bool changed = false;
 	struct device_settings *device;
 	if(strcmp(name, "/instant_play") == 0) {
@@ -197,17 +195,21 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			int i;
 			if(url != NULL && path != NULL && port != NULL) {
 				clientDisconnect();
-				while(clientIsConnected()) vTaskDelay(5);
+				for (i = 0;i<100;i++)
+				{
+					if(!clientIsConnected())break;
+					vTaskDelay(4);
+				}
+				
 				clientSetURL(url);
 				clientSetPath(path);
 				clientSetPort(atoi(port));
 				clientConnect();
-				for (i = 0;i<50;i++)
+				for (i = 0;i<100;i++)
 				{
 					if (clientIsConnected()) break;
 					vTaskDelay(5);
 				}
-//				while(!clientIsConnected()) vTaskDelay(5);
 			} 
 			if(url) infree(url);
 			if(path) infree(path);
@@ -327,12 +329,14 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			infree(id);
 		}
 	} else if(strcmp(name, "/play") == 0) {
-		if(data_size > 0) {
-			char* id = getParameterFromResponse("id=", data, data_size);
-			if(id != NULL) {
+		if(data_size > 4) {
+//			char* id = getParameterFromResponse("id=", data, data_size);
+			char * id = data+3;
+			data[data_size-1] = 0;
+//			if(id != NULL) {
 				playStation(id);
-				infree(id);
-			}
+//				infree(id);
+//			}
 		}
 	} else if(strcmp(name, "/stop") == 0) {
 	    int i;
@@ -344,7 +348,6 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 				if (!clientIsConnected()) break;
 				vTaskDelay(4);
 			}
-//			while(clientIsConnected()) vTaskDelay(5);
 		}
 	} else if(strcmp(name, "/icy") == 0)	
 	{	
@@ -502,7 +505,7 @@ ICACHE_FLASH_ATTR bool httpServerHandleConnection(int conn, char* buf, uint16_t 
 			pvParams->buf = pbuf;
 			pvParams->len = buflen;
 //			printf("GET websocket\n");
-			while (xTaskCreate( websocketTask,"t11",410,(void *) pvParams,4, NULL )!= pdPASS) 
+			while (xTaskCreate( websocketTask,"t11",300,(void *) pvParams,4, NULL )!= pdPASS)  //280
 			{
 				printf("ws xTaskCreate  failed. Retry\n");
 				vTaskDelay(100);
@@ -553,13 +556,13 @@ ICACHE_FLASH_ATTR bool httpServerHandleConnection(int conn, char* buf, uint16_t 
 ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 #define RECLEN	638
 	struct timeval timeout; 
-    timeout.tv_sec = 1000; // bug *1000 for seconds
+    timeout.tv_sec = 2000; // bug *1000 for seconds
     timeout.tv_usec = 0;
 	int recbytes ,recb,i;
 //	portBASE_TYPE uxHighWaterMark;
 	int  client_sock =  (int)pvParams;
 	uint16_t reclen = 	RECLEN;	
-    char *buf = (char *)inmalloc(reclen+1);
+    char *buf = (char *)inmalloc(reclen);
 	bool result = true;
 //	for (i = 0;i< reclen+1;i++) buf[i] = 0;
 //	printf("Client entry  socket:%x  reclen:%d\n",client_sock,reclen+1);
@@ -590,7 +593,7 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 //						printf("cl: %d\n",cl);
 						if ((reclen == RECLEN) && ((bend - buf +cl)> reclen))
 						{
-							buf = realloc(buf,(2*RECLEN) +1);
+							buf = realloc(buf,(2*RECLEN) );
 							if (buf == NULL) { printf("serverclientTask realloc fails\n");   break;}
 							reclen = 2*RECLEN;
 							bend = strstr(buf, "\r\n\r\n")+4;
@@ -707,21 +710,22 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 					vTaskDelay(100);					
                 } else
 				{
-					if (xPortGetFreeHeapSize( ) < 3000)
-					{
-						printf ("Low memory %d\n",xPortGetFreeHeapSize( ));
-						vTaskDelay(800);	
-						printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
-						if (xPortGetFreeHeapSize( ) < 3000)
-						{
-							printf ("Low memory 2%d\n",xPortGetFreeHeapSize( ));					
-							write(client_sock, lowmemory, strlen(lowmemory));
-							close (client_sock);
-						}	
-					} else
 					while (1) 
-					{
-						printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
+					{	
+						if (xPortGetFreeHeapSize( ) < 4000)
+						{
+							printf ("Low memory %d\n",xPortGetFreeHeapSize( ));
+							vTaskDelay(300);	
+							printf ("Heap size low mem: %d\n",xPortGetFreeHeapSize( ));
+							if (xPortGetFreeHeapSize( ) < 4000)
+							{
+								printf ("Low memory2 %d\n",xPortGetFreeHeapSize( ));					
+								write(client_sock, lowmemory, strlen(lowmemory));
+								close (client_sock);
+								break;							
+							}	
+						} 
+//						printf ("Heap size server: %d\n",xPortGetFreeHeapSize( ));
 //						printf ("Accept socket %d\n",client_sock);
 						if (xSemaphoreTake(semclient,400))
 						{ 
@@ -734,8 +738,8 @@ ICACHE_FLASH_ATTR void serverTask(void *pvParams) {
 							{
 								printf("xTaskCreate 1 failed for stack %d. Retrying...\n",stack);
 //								stack -=10;
-								vTaskDelay(200);
-							}
+								vTaskDelay(150);	
+							}							
 							break;
 						} else {vTaskDelay(20);printf("server busy. Retrying...\n");}
 					}
